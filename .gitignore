@@ -10,8 +10,6 @@
 *.userosscache
 *.sln.docstates
 
-
-
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -371,7 +369,6 @@ FodyWeavers.xsd
 !.vscode/extensions.json
 *.code-workspace
 
-
 # Local History for Visual Studio Code
 .history/
 
@@ -382,3 +379,5 @@ FodyWeavers.xsd
 # Config files
 specialappsettings.config
 
+.vscode/launch.json
+.vscode/tasks.json
