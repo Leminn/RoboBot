@@ -114,7 +114,7 @@ namespace RoboBot
             srb2Game = srcClient.Games.GetGame("76ryx418");
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
-
+        
         static async Task MainAsync(string[] args)
         {
             
@@ -137,7 +137,7 @@ namespace RoboBot
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
-                StringPrefix = ";;"
+                StringPrefix = "!"
             });
 
             commands.RegisterCommands<MyCommands>();
