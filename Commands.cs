@@ -7,6 +7,7 @@ using System.Configuration;
 using System.Linq;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Entities;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Net;
@@ -15,119 +16,101 @@ using Enums = RoboBot.SRB2Enums;
 
 namespace RoboBot
 {
-    public class MyCommands
+    public class MyCommands : BaseCommandModule
     {
-
-        [Command("levels")]
+        
+        
+        [Command("help")]
         public async Task HelpSheet(CommandContext ctx)
         {
             var commandList = new DiscordEmbedBuilder
             {
-                Title = "Level List",
-                Color = DiscordColor.Green
+                Title = "Help",
+                Description = "Syntax : !records (level abreviation) (character)",
+                Color = DiscordColor.Gold
             };
-            List<string> allLevels = Enums.levelsID.Keys.ToList();
-            for(int i = 0; i < 3; i++){
-                switch(i){
-                    case 0:
-                        commandList.AddField("Greenflower Zone", allLevels[0] + ", " + 
-                        allLevels[1] + ", " +
-                        allLevels[2]
-                        );
-                        break;
-                    
-                    case 1:
-                        commandList.AddField("Techno Hill Zone", allLevels[3] + ", " +
-                        allLevels[4] + ", " +
-                        allLevels[5]
-                        );
-                        break;
-                    
-                    case 2:
-                        commandList.AddField("Deep Sea Zone", allLevels[6] + ", " +
-                        allLevels[7] + ", " +
-                        allLevels[8]
-                        );
-                        break;
-                }
-            }
-            
-            /*foreach(string levelName in allLevels.ToList()){
-                try{
-                commandList.AddField(levelName,"------");
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
-            } */
+            commandList.AddField("Example","!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
 
             await ctx.RespondAsync(embed: commandList);
         } 
 
         [Command("records")]
-        public async Task Greenflower1Records(CommandContext ctx, string level,  string character){
-            bool gotLvl = Enums.levelsID.TryGetValue(level.ToUpper(), out string levelID);
-            
-            bool gotCat = Enums.categoriesID.TryGetValue(character.ToLower(), out string categoryID);
+        public async Task Records(CommandContext ctx, string level,  string character){
+            bool gotLvl = Enums.levelsID.TryGetValue(level.ToUpper(), out SRB2Level srb2Level);
 
-            if(gotCat == false || gotLvl == false)
+            bool gotCat = Enums.categoriesID.TryGetValue(character.ToLower(), out string categoryID);
+            
+            bool nights = false;
+            if (gotLvl)
             {
-                await ctx.RespondAsync(ctx.Command.Arguments[0].Description);
-                await ctx.RespondAsync("commandName: " + ctx.Command.Name);
-                await ctx.RespondAsync("raw argument string: " + ctx.RawArgumentString);
-                await ctx.RespondAsync("oof");
+                int mapNumber = SRB2Level.GetMapNumber(srb2Level.MapName);
+                if (mapNumber > 49 && mapNumber < 74)
+                {
+                    categoryID = "xd1g1j4d";
+                    gotCat = true;
+                    nights = true;
+                }
             }
-            else
+
+            if(!gotCat)
             {
-                
+                    await ctx.RespondAsync("Wrong / Missing parameter: Character");
+            }
+
+            if(!gotLvl)
+            {
+                    await ctx.RespondAsync("Wrong / Missing parameter: Level");
+            }
+
+            if(gotCat == true && gotLvl == true)
+            {
                 Leaderboard leaderboard = Program.srcClient.Leaderboards.GetLeaderboardForLevel(
                     Program.srb2Game.ID,
-                    levelID, // GF1
-                    categoryID, // Sonic
+                    srb2Level.SrcID,
+                    categoryID,
                     5
                 );
-                /*Level level = Program.srb2Game.Levels.ToArray()[1];
-                IEnumerable<Run> characterRuns = level.Runs.Where(run => run.Category.Name.ToLower() == character.ToLower()); //tolower is to make it case insensitive
-                Run[] verifiedRuns = characterRuns.Where(run => run.Status.Type == RunStatusType.Verified).OrderBy(run => run.Times.GameTime.Value).ToArray();
-                for (int i = 0; i < leaderboard.Records.Count(); i++)
-                {
-                    await ctx.RespondAsync($"{i + 1}. {leaderboard.Records[i].Player.Name} | {leaderboard.Records[i].Times.GameTime.Value.ToString(Program.timeFormat)} : {leaderboard.Records[i].WebLink.AbsoluteUri}");
-                }
-                */
 
                 var records = new DiscordEmbedBuilder
                 {
-                    Title = leaderboard.Level.Name + " | " + leaderboard.Category.Name,
+                    Title = leaderboard.Level.Name,
 
                     Url = leaderboard.WebLink.AbsoluteUri
                 };
 
-                switch(character.ToLower()) {
-                    case "sonic":
+                switch(leaderboard.Category.Name){
+                    
+                    case "Sonic":
                         records.Color = DiscordColor.Blue;
                         break;
-
-                    case "tails":
+                    case "Tails":
                         records.Color = DiscordColor.Yellow;
                         break;
-
-                    case "knuckles":
+                    case "Knuckles":
                         records.Color = DiscordColor.Red;
                         break;
-
-                    case "amy":
+                    case "Amy":
                         records.Color = DiscordColor.HotPink;
                         break;
-
-                    case "fang":
+                    case "Fang":
                         records.Color = DiscordColor.Purple;
                         break;
-
-                    case "metal":
+                    case "Metal Sonic":
                         records.Color = DiscordColor.DarkBlue;
                         break;
                 }
+                
+                switch(nights)
+                {
+                    case true:
+                        records.Color = DiscordColor.Magenta;
+                        break;
+
+                    case false:
+                        records.Title += " | " + leaderboard.Category.Name;
+                        break;
+                }
+                
                 for (int i = 0; i < leaderboard.Records.Count(); i++)
                 {
                     records.AddField($"{i + 1}. {leaderboard.Records[i].Player.Name} | {leaderboard.Records[i].Times.GameTime.Value.ToString(Program.timeFormat)} ", 
@@ -137,10 +120,22 @@ namespace RoboBot
                 }
 
                 await ctx.RespondAsync(embed: records);
-
             }
-
+            else
+            {
+                await ctx.RespondAsync("Type !help for more info");
+            }
         }
-
+        [Command("records")]
+        public async Task RecordsOnlyLevel(CommandContext ctx, string level)
+        {
+            await Records(ctx, level, "");
+        }
+        
+        [Command("records")]
+        public async Task Recordsoof(CommandContext ctx)
+        {
+            await ctx.RespondAsync("No parameters given\nType !help for more info");
+        }
     }
 }
