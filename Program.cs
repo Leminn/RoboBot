@@ -96,11 +96,18 @@ namespace RoboBot
         public static Dictionary<string, string> categoriesID = new Dictionary<string, string>()
         {
             {"sonic", "xd1g1j4d"},
+            {"s", "xd1g1j4d"},
             {"tails", "zd3wvjvk"},
+            {"t", "zd3wvjvk"},
             {"knuckles", "9kvoq882"},
             {"knux", "9kvoq882"},
+            {"k", "9kvoq882"},
             {"amy", "rkll95nk"},
-            {"metal", "w20g8q5k"}
+            {"a", "rkll95nk"},
+            {"fang", "ndx9e3rd"},
+            {"f", "ndx9e3rd"},
+            {"metal", "w20g8q5k"},
+            {"m", "w20g8q5k"}
         };
     }
     class Program
