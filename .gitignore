@@ -379,5 +379,5 @@ FodyWeavers.xsd
 # Config files
 specialappsettings.config
 
-.vscode/launch.json
 .vscode/tasks.json
+.vscode/launch.json

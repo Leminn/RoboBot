@@ -5,6 +5,7 @@ using System.Web;
 using System.Threading.Tasks;
 using System.Configuration;
 using System.Linq;
+using System.Drawing;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Entities;
@@ -12,13 +13,12 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Net;
 using SpeedrunComSharp;
-using Enums = RoboBot.SRB2Enums;
+using RoboBot_SRB2;
 
 namespace RoboBot
 {
     public class MyCommands : BaseCommandModule
     {
-        
         
         [Command("help")]
         public async Task HelpSheet(CommandContext ctx)
@@ -36,9 +36,12 @@ namespace RoboBot
 
         [Command("records")]
         public async Task Records(CommandContext ctx, string level,  string character){
-            bool gotLvl = Enums.levelsID.TryGetValue(level.ToUpper(), out SRB2Level srb2Level);
+            try
+            {
 
-            bool gotCat = Enums.categoriesID.TryGetValue(character.ToLower(), out string categoryID);
+            bool gotLvl = SRB2Enums.levelsID.TryGetValue(level.ToUpper(), out SRB2Level srb2Level);
+
+            bool gotCat = SRB2Enums.categoriesID.TryGetValue(character.ToLower(), out string categoryID);
             
             bool nights = false;
             if (gotLvl)
@@ -71,10 +74,13 @@ namespace RoboBot
                     5
                 );
 
+                DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
+                thumbnailUrl.Url = "http://77.68.95.193/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty)  + ".png";
+
                 var records = new DiscordEmbedBuilder
                 {
-                    Title = leaderboard.Level.Name,
-
+                    Title = srb2Level.FullName,
+                    Thumbnail = thumbnailUrl,
                     Url = leaderboard.WebLink.AbsoluteUri
                 };
 
@@ -124,6 +130,16 @@ namespace RoboBot
             else
             {
                 await ctx.RespondAsync("Type !help for more info");
+            }
+            }
+            catch(Exception e)
+            {
+                await ctx.RespondAsync(e.Source);
+                await ctx.RespondAsync(e.Message);
+                //await ctx.RespondAsync(e.InnerException.Message);
+                await ctx.RespondAsync(e.StackTrace);
+
+
             }
         }
         [Command("records")]
