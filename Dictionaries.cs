@@ -11,9 +11,9 @@ namespace RoboBot_SRB2
 
         public SRB2Level(string srcID, string fullName, string mapName)
         {
-            FullName = fullName;
-            SrcID = srcID;
-            MapName = mapName;
+            this.FullName = fullName;
+            this.SrcID = srcID;
+            this.MapName = mapName;
         }
 
         public static int GetMapNumber(string mapName)

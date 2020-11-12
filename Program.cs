@@ -18,6 +18,8 @@ namespace RoboBot
 {
     class Program
     {
+        public static DateTime startedAt;
+
         public static string programDirectory = AppDomain.CurrentDomain.BaseDirectory;
         public static string timeFormat = @"mm\:ss\.ff";
         public static DiscordClient discord;
@@ -29,6 +31,9 @@ namespace RoboBot
 
         static void Main(string[] args)
         {
+            var current = System.Diagnostics.Process.GetCurrentProcess();
+            startedAt = current.StartTime;
+
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
             srb2Game = srcClient.Games.GetGame("76ryx418");
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
