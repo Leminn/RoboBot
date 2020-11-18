@@ -22,7 +22,9 @@ namespace RoboBot
 
         public static string programDirectory = AppDomain.CurrentDomain.BaseDirectory;
         public static string timeFormat = @"mm\:ss\.ff";
+        public static string timeFormatWithHours = @"hh\:mm\:ss\.ff";
         public static DiscordClient discord;
+        public static string gameId = "76ryx418";
         static CommandsNextExtension commands;
         
         public static Game srb2Game;
@@ -35,7 +37,7 @@ namespace RoboBot
             startedAt = current.StartTime;
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-            srb2Game = srcClient.Games.GetGame("76ryx418");
+            srb2Game = srcClient.Games.GetGame(gameId);
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
         
@@ -44,9 +46,8 @@ namespace RoboBot
             
             discord = new DiscordClient(new DiscordConfiguration 
             { 
-
-            Token = ConfigurationManager.AppSettings["APIKey"],
-            TokenType = TokenType.Bot
+                Token = ConfigurationManager.AppSettings["APIKey"],
+                TokenType = TokenType.Bot
             }); 
 
         
