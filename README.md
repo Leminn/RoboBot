@@ -1,7 +1,7 @@
 # RoboBot
 A Discord bot that displays information about Sonic Robo Blast 2 speedrunning records using Speedrun.com API
 
-![Records command example](example.gif)
+![Records command example](Example.gif)
 
 ## Contributors
 
