@@ -36,7 +36,7 @@ namespace RoboBot
             var linkList = new DiscordEmbedBuilder
             {
                 Title = "Speedrun.com",
-                Description = "Links for the vanilla SRC board",
+                Description = $"Links for the vanilla SRC board",
                 Color = DiscordColor.Gold
             };
             linkList.AddField("Full-game board", "https://www.speedrun.com/srb2/full_game");
@@ -44,16 +44,11 @@ namespace RoboBot
 
             await ctx.RespondAsync(embed: linkList);
         }
-
-
         [Command("records")]
-        public async Task Records(CommandContext ctx, string level, string character, string version)
+        public async Task Records(CommandContext ctx, string level, string character)
         {
-            try
-            {
-                bool gotLvl = SRB2Enums.levelsID.TryGetValue(level.ToUpper(), out SRB2Level srb2Level);
 
-                bool gotCatFg = SRB2Enums.fgCategoriesID.TryGetValue(character.ToLower(), out string categoryFgID);
+                bool gotLvl = SRB2Enums.levelsID.TryGetValue(level.ToUpper(), out SRB2Level srb2Level);
 
                 bool gotCat = SRB2Enums.categoriesID.TryGetValue(character.ToLower(), out string categoryID);
 
@@ -67,20 +62,96 @@ namespace RoboBot
                         gotCat = true;
                         nights = true;
                     }
-                    else if (!gotCat)
-                    {
-                        categoryID = "xd1g1j4d";
-                        gotCat = true;
-                    }
                 }
+
+                if (!gotCat)
+                {
+                    await ctx.RespondAsync("Wrong / Missing parameter: Character");
+                }
+
+                if (!gotLvl)
+                {
+                    await ctx.RespondAsync("Wrong / Missing parameter: Level");
+                }
+
+                if (gotCat == true && gotLvl == true)
+                {
+                Leaderboard leaderboard;
+                leaderboard = Program.srcClient.Leaderboards.GetLeaderboardForLevel(
+                Program.srb2Game.ID,
+                srb2Level.SrcID,
+                categoryID,
+                5
+                );
+
+                DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
+                thumbnailUrl.Url = "http://77.68.95.193/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
+                DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
+                DiscordEmoji pog = DiscordEmoji.FromName(Program.discord, ":pog:");
+                embedFooter.Text = $"{pog.GetDiscordName()}";
+                Random r = new Random();
+                int footerImgNum = r.Next(1, 21);
+                embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
+                var records = new DiscordEmbedBuilder
+                {
+                    Title = srb2Level.FullName,
+                    Thumbnail = thumbnailUrl,
+                    Footer = embedFooter,
+                    Url = leaderboard.WebLink.AbsoluteUri
+                };
+                CharacterColor(leaderboard, records);
+
+                switch (nights)
+                {
+                    case true:
+                        records.Color = DiscordColor.Magenta;
+                        break;
+
+                    case false:
+                        records.Title += " | " + leaderboard.Category.Name;
+                        break;
+                }
+
+                for (int i = 0; i < leaderboard.Records.Count(); i++)
+                {
+                    string playerName = leaderboard.Records[i].Player.Name;
+                    string runTime = leaderboard.Records[i].Times.GameTimeISO.Value.ToString(Program.timeFormat);
+                    records.AddField($"{i + 1}. {playerName} | {runTime}",
+                    leaderboard.Records[i].WebLink.AbsoluteUri);
+
+                }
+                await ctx.RespondAsync(embed: records);
+                }
+                else
+                {
+                    await ctx.RespondAsync("Type !help for more info");
+                }
+            }
+
+        [Command("records")]
+        public async Task RecordsOnlyLvl(CommandContext ctx, string level)
+        {
+            await Records(ctx, level, "sonic");
+        }
+
+
+
+        [Command("fgrecords")]
+        public async Task FgRecords(CommandContext ctx, string level, string character, string version)
+        {
+            try
+            {
+                bool gotCatFg = SRB2Enums.fgCategoriesID.TryGetValue(character.ToLower(), out string categoryFgID);
+
+
 
                 if (!gotCatFg)
                 {
                     gotCatFg = SRB2Enums.fgCategoriesID.TryGetValue(level.ToLower(), out categoryFgID);
-                    
+
                 }
 
-                if (!gotLvl && gotCatFg)
+                if (gotCatFg)
                 {
                     string goal;
                     if (categoryFgID == "9d8pmg3k")
@@ -98,7 +169,7 @@ namespace RoboBot
 
                         string originalVer = "";
                         string processedVer = "";
-                        if(categoryFgID == "9d8pmg3k" || categoryFgID == "9d8pm0qk")
+                        if (categoryFgID == "9d8pmg3k" || categoryFgID == "9d8pm0qk")
                         {
                             originalVer = string.Join(" ", character + version).ToLower();
                             gotVer = SRB2Enums.versions.TryGetValue(originalVer, out processedVer);
@@ -117,8 +188,7 @@ namespace RoboBot
                         Leaderboard leaderboard = FullGameLeaderboard(goal, categoryFgID, processedVer, originalVer);
                         DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
                         DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
-                        int timeSinceStarted = (DateTime.Now - Program.startedAt).Minutes;
-                        embedFooter.Text = $"Last updated {timeSinceStarted} minute(s) ago";
+                        embedFooter.Text = $"";
                         Random r = new Random();
                         int footerImgNum = r.Next(1, 21);
                         embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
@@ -148,7 +218,7 @@ namespace RoboBot
                         string displayedTimeFormat = Program.timeFormat;
                         if (leaderboard.Records.Count != 0)
                         {
-                            if(leaderboard.Records.Any(x => x.Times.PrimaryISO.Value.Hours != 0))
+                            if (leaderboard.Records.Any(x => x.Times.PrimaryISO.Value.Hours != 0))
                             {
                                 displayedTimeFormat = Program.timeFormatWithHours;
                             }
@@ -165,68 +235,38 @@ namespace RoboBot
                         await ctx.RespondAsync(embed: records);
                     }
                 }
-
-                else if (gotCat == true && gotLvl == true)
-                {
-                    Leaderboard leaderboard;
-                    leaderboard = Program.srcClient.Leaderboards.GetLeaderboardForLevel(
-                    Program.srb2Game.ID,
-                    srb2Level.SrcID,
-                    categoryID,
-                    5
-                    );
-
-                    DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
-                    thumbnailUrl.Url = "http://77.68.95.193/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
-                    DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
-                    int timeSinceStarted = (DateTime.Now - Program.startedAt).Minutes;
-                    embedFooter.Text = $"Last updated {timeSinceStarted} minute(s) ago";
-                    Random r = new Random();
-                    int footerImgNum = r.Next(1, 21);
-                    embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
-                    var records = new DiscordEmbedBuilder
-                    {
-                        Title = srb2Level.FullName,
-                        Thumbnail = thumbnailUrl,
-                        Footer = embedFooter,
-                        Url = leaderboard.WebLink.AbsoluteUri
-                    };
-                    CharacterColor(leaderboard, records);
-
-                    switch (nights)
-                    {
-                        case true:
-                            records.Color = DiscordColor.Magenta;
-                            break;
-
-                        case false:
-                            records.Title += " | " + leaderboard.Category.Name;
-                            break;
-                    }
-
-                    for (int i = 0; i < leaderboard.Records.Count(); i++)
-                    {
-                        string playerName = leaderboard.Records[i].Player.Name;
-                        string runTime = leaderboard.Records[i].Times.GameTimeISO.Value.ToString(Program.timeFormat);
-                        records.AddField($"{i + 1}. {playerName} | {runTime}",
-                        leaderboard.Records[i].WebLink.AbsoluteUri);
-                    }
-                    await ctx.RespondAsync(embed: records);
-                }
-                if (!gotLvl && !gotCatFg)
-                {
-                    throw new Exception("Wrong / Missing parameter: Level (ILs) / Category (Full-game)");
-                }
             }
+
+
             catch (Exception e)
             {
                 await ctx.RespondAsync("Type !help for more info");
 
-               /* await ctx.RespondAsync(e.Source);
-                await ctx.RespondAsync(e.Message);
-                await ctx.RespondAsync(e.StackTrace);
-                */
+                /* await ctx.RespondAsync(e.Source);
+                 await ctx.RespondAsync(e.Message);
+                 await ctx.RespondAsync(e.StackTrace);
+                 */
             }
+        }
+        [Command("fgrecords")]
+        public async Task FGRecordsNoVersion(CommandContext ctx, string category, string character)
+        {
+            await FgRecords(ctx, category, character, "");
+        }
+
+        [Command("fgrecords")]
+        public async Task FGRecordsNoVersionCharacter(CommandContext ctx, string category)
+        {
+            await FgRecords(ctx, category, "sonic", "");
+        }
+
+
+
+      
+        [Command("records")]
+        public async Task Recordsoof(CommandContext ctx)
+        {
+            await ctx.RespondAsync("No parameters given\nType !help for more info");
         }
 
         private static void CharacterColor(Leaderboard leaderboard, DiscordEmbedBuilder records)
@@ -314,23 +354,5 @@ namespace RoboBot
         }
 
 
-        [Command("records")]
-        public async Task RecordsNoVersion(CommandContext ctx, string level, string character)
-        {
-            await Records(ctx, level, character, "");
-        }
-
-
-        [Command("records")]
-        public async Task RecordsOnlyLvl(CommandContext ctx, string level)
-        {
-            await Records(ctx, level, "", "");
-        }
-
-        [Command("records")]
-        public async Task Recordsoof(CommandContext ctx)
-        {
-            await ctx.RespondAsync("No parameters given\nType !help for more info");
-        }
     }
 }

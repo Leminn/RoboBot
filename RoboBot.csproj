@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00748" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00748" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00748" />
+    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00804" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00804" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.0.0-nightly-00804" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.1.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.9" />
@@ -21,5 +21,14 @@
     <Reference Include="SpeedrunComSharp">
       <HintPath>SpeedrunComSharp.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="app.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="specialappsettings.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

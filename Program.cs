@@ -18,8 +18,6 @@ namespace RoboBot
 {
     class Program
     {
-        public static DateTime startedAt;
-
         public static string programDirectory = AppDomain.CurrentDomain.BaseDirectory;
         public static string timeFormat = @"mm\:ss\.ff";
         public static string timeFormatWithHours = @"hh\:mm\:ss\.ff";
@@ -29,13 +27,10 @@ namespace RoboBot
         
         public static Game srb2Game;
     
-        public static SpeedrunComClient srcClient = new SpeedrunComClient() { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
+        public static SpeedrunComClient srcClient = new SpeedrunComClient(maxCacheElements:0) { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
 
         static void Main(string[] args)
         {
-            var current = System.Diagnostics.Process.GetCurrentProcess();
-            startedAt = current.StartTime;
-
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
             srb2Game = srcClient.Games.GetGame(gameId);
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
