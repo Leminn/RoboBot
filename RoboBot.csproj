@@ -6,6 +6,11 @@
     <AppConfig>app.config</AppConfig>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>3</WarningLevel>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00804" />
     <PackageReference Include="DSharpPlus.CommandsNext" Version="4.0.0-nightly-00804" />

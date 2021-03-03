@@ -4,16 +4,24 @@ using DSharpPlus.Entities;
 using RoboBot_SRB2;
 using SpeedrunComSharp;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Collections;
 
 namespace RoboBot
 {
+    public class ParsingException : Exception
+    {
+        public ParsingException(string? message) : base(message)
+        {
+
+        }
+    }
+
     public class MyCommands : BaseCommandModule
     {
         public static string finalVersion = "";
+
         [Command("help")]
         public async Task HelpSheet(CommandContext ctx)
         {
@@ -44,10 +52,12 @@ namespace RoboBot
 
             await ctx.RespondAsync(embed: linkList);
         }
+
         [Command("records")]
         public async Task Records(CommandContext ctx, string level, string character)
         {
-
+            try
+            {
                 bool gotLvl = SRB2Enums.levelsID.TryGetValue(level.ToUpper(), out SRB2Level srb2Level);
 
                 bool gotCat = SRB2Enums.categoriesID.TryGetValue(character.ToLower(), out string categoryID);
@@ -66,67 +76,72 @@ namespace RoboBot
 
                 if (!gotCat)
                 {
-                    await ctx.RespondAsync("Wrong / Missing parameter: Character");
+                    throw new ParsingException("Wrong / Missing parameter: Character");
                 }
 
                 if (!gotLvl)
                 {
-                    await ctx.RespondAsync("Wrong / Missing parameter: Level");
+                    throw new ParsingException("Wrong / Missing parameter: Level");
                 }
 
                 if (gotCat == true && gotLvl == true)
                 {
-                Leaderboard leaderboard;
-                leaderboard = Program.srcClient.Leaderboards.GetLeaderboardForLevel(
-                Program.srb2Game.ID,
-                srb2Level.SrcID,
-                categoryID,
-                5
-                );
+                    Leaderboard leaderboard;
+                    leaderboard = Program.srcClient.Leaderboards.GetLeaderboardForLevel(
+                    Program.srb2Game.ID,
+                    srb2Level.SrcID,
+                    categoryID,
+                    5
+                    );
+                    
+                    DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
+                    thumbnailUrl.Url = "http://77.68.95.193/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
+                    DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
+                    embedFooter.Text = $"{Program.s.TotalRunsCount}";
+                    Random r = new Random();
+                    int footerImgNum = r.Next(1, 21);
+                    embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
+                    var records = new DiscordEmbedBuilder
+                    {
+                        Title = srb2Level.FullName,
+                        Thumbnail = thumbnailUrl,
+                        Footer = embedFooter,
+                        Url = leaderboard.WebLink.AbsoluteUri
+                    };
+                    CharacterColor(leaderboard, records);
 
-                DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
-                thumbnailUrl.Url = "http://77.68.95.193/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
-                DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
-                DiscordEmoji pog = DiscordEmoji.FromName(Program.discord, ":pog:");
-                embedFooter.Text = $"{pog.GetDiscordName()}";
-                Random r = new Random();
-                int footerImgNum = r.Next(1, 21);
-                embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
-                var records = new DiscordEmbedBuilder
-                {
-                    Title = srb2Level.FullName,
-                    Thumbnail = thumbnailUrl,
-                    Footer = embedFooter,
-                    Url = leaderboard.WebLink.AbsoluteUri
-                };
-                CharacterColor(leaderboard, records);
+                    switch (nights)
+                    {
+                        case true:
+                            records.Color = DiscordColor.Magenta;
+                            break;
 
-                switch (nights)
-                {
-                    case true:
-                        records.Color = DiscordColor.Magenta;
-                        break;
+                        case false:
+                            records.Title += " | " + leaderboard.Category.Name;
+                            break;
+                    }
 
-                    case false:
-                        records.Title += " | " + leaderboard.Category.Name;
-                        break;
-                }
-
-                for (int i = 0; i < leaderboard.Records.Count(); i++)
-                {
-                    string playerName = leaderboard.Records[i].Player.Name;
-                    string runTime = leaderboard.Records[i].Times.GameTimeISO.Value.ToString(Program.timeFormat);
-                    records.AddField($"{i + 1}. {playerName} | {runTime}",
-                    leaderboard.Records[i].WebLink.AbsoluteUri);
-
-                }
-                await ctx.RespondAsync(embed: records);
-                }
-                else
-                {
-                    await ctx.RespondAsync("Type !help for more info");
+                    for (int i = 0; i < leaderboard.Records.Count(); i++)
+                    {
+                        string playerName = leaderboard.Records[i].Player.Name;
+                        string runTime = leaderboard.Records[i].Times.GameTimeISO.Value.ToString(Program.timeFormat);
+                        records.AddField($"{i + 1}. {playerName} | {runTime}",
+                        leaderboard.Records[i].WebLink.AbsoluteUri);
+                    }
+                    await ctx.RespondAsync(embed: records);
                 }
             }
+            catch (ParsingException p)
+            {
+                await ctx.RespondAsync(p.Message);
+                await ctx.RespondAsync("Type !help for more info");
+            }
+            catch (Exception e)
+            {
+                await ctx.RespondAsync("Internal Error");
+                await ctx.RespondAsync(e.Message);
+            }
+        }
 
         [Command("records")]
         public async Task RecordsOnlyLvl(CommandContext ctx, string level)
@@ -134,26 +149,27 @@ namespace RoboBot
             await Records(ctx, level, "sonic");
         }
 
-
-
         [Command("fgrecords")]
         public async Task FgRecords(CommandContext ctx, string level, string character, string version)
         {
+            string goal = "fuck";
+            string categoryFgID = "aaaaaaaaaaaa";
             try
             {
-                bool gotCatFg = SRB2Enums.fgCategoriesID.TryGetValue(character.ToLower(), out string categoryFgID);
+                bool gotCatFg = false;
 
 
-
-                if (!gotCatFg)
+                while (!gotCatFg)
                 {
+                    gotCatFg = SRB2Enums.fgCategoriesID.TryGetValue(character.ToLower(), out categoryFgID);
                     gotCatFg = SRB2Enums.fgCategoriesID.TryGetValue(level.ToLower(), out categoryFgID);
-
+                    gotCatFg = SRB2Enums.fgCategoriesID.TryGetValue("Any%", out categoryFgID);
+                    gotCatFg = true;
                 }
 
                 if (gotCatFg)
                 {
-                    string goal;
+                    //string goal;
                     if (categoryFgID == "9d8pmg3k")
                     {
                         goal = SRB2Enums.GetGoal(categoryFgID);
@@ -162,92 +178,88 @@ namespace RoboBot
                     {
                         goal = SRB2Enums.GetGoal(level);
                     }
-                    if (goal != "notfound")
+
+                    bool gotVer = false;
+
+                    string originalVer = "";
+                    string processedVer = "";
+                    if (categoryFgID == "9d8pmg3k" || categoryFgID == "9d8pm0qk")
                     {
-
-                        bool gotVer = false;
-
-                        string originalVer = "";
-                        string processedVer = "";
-                        if (categoryFgID == "9d8pmg3k" || categoryFgID == "9d8pm0qk")
-                        {
-                            originalVer = string.Join(" ", character + version).ToLower();
-                            gotVer = SRB2Enums.versions.TryGetValue(originalVer, out processedVer);
-                        }
-                        else
-                        {
-                            originalVer = version;
-                            gotVer = SRB2Enums.versions.TryGetValue(originalVer, out processedVer);
-                        }
-
-                        if (!gotVer && originalVer != "")
-                        {
-                            throw new Exception("Wrong / Missing version");
-                        }
-
-                        Leaderboard leaderboard = FullGameLeaderboard(goal, categoryFgID, processedVer, originalVer);
-                        DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
-                        DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
-                        embedFooter.Text = $"";
-                        Random r = new Random();
-                        int footerImgNum = r.Next(1, 21);
-                        embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
-                        var records = new DiscordEmbedBuilder
-                        {
-                            Title = $"{goal} | ",
-                            Thumbnail = thumbnailUrl,
-                            Footer = embedFooter,
-                            Url = leaderboard.WebLink.AbsoluteUri
-                        };
-                        CharacterColor(leaderboard, records);
-                        if (categoryFgID == "9d8pmg3k" || categoryFgID == "9d8pm0qk")
-                        {
-                            string formattedCat = leaderboard.Category.Name.Replace(" ", string.Empty);
-                            string url = $"http://77.68.95.193/fgicons/{formattedCat}.png";
-                            thumbnailUrl.Url = url;
-                            records.Title += finalVersion;
-                        }
-                        else
-                        {
-                            string formattedGoal = goal.Replace(" ", string.Empty).Replace("%", string.Empty);
-                            string url = $"http://77.68.95.193/fgicons/{formattedGoal}.png";
-                            thumbnailUrl.Url = url;
-                            records.Title += leaderboard.Category.Name + " | " + finalVersion;
-                        }
-
-                        string displayedTimeFormat = Program.timeFormat;
-                        if (leaderboard.Records.Count != 0)
-                        {
-                            if (leaderboard.Records.Any(x => x.Times.PrimaryISO.Value.Hours != 0))
-                            {
-                                displayedTimeFormat = Program.timeFormatWithHours;
-                            }
-                        }
-
-                        for (int i = 0; i < leaderboard.Records.Count(); i++)
-                        {
-                            string playerName = leaderboard.Records[i].Player.Name;
-                            string runTime = leaderboard.Records[i].Times.PrimaryISO.Value.ToString(displayedTimeFormat);
-                            records.AddField($"{i + 1}. {playerName} | {runTime}",
-                            leaderboard.Records[i].WebLink.AbsoluteUri);
-                        }
-
-                        await ctx.RespondAsync(embed: records);
+                        originalVer = string.Join(" ", character + version).ToLower();
+                        gotVer = SRB2Enums.versions.TryGetValue(originalVer, out processedVer);
                     }
+                    else
+                    {
+                        originalVer = version;
+                        gotVer = SRB2Enums.versions.TryGetValue(originalVer, out processedVer);
+                    }
+
+                    if (!gotVer && originalVer != "")
+                    {
+                        throw new ParsingException("Wrong / Missing version");
+                    }
+
+                    Leaderboard leaderboard = FullGameLeaderboard(goal, categoryFgID, processedVer, originalVer);
+                    DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
+                    DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
+                    embedFooter.Text = $"";
+                    Random r = new Random();
+                    int footerImgNum = r.Next(1, 21);
+                    embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
+                    var records = new DiscordEmbedBuilder
+                    {
+                        Title = $"{goal} | ",
+                        Thumbnail = thumbnailUrl,
+                        Footer = embedFooter,
+                        Url = leaderboard.WebLink.AbsoluteUri
+                    };
+                    CharacterColor(leaderboard, records);
+                    if (categoryFgID == "9d8pmg3k" || categoryFgID == "9d8pm0qk")
+                    {
+                        string formattedCat = leaderboard.Category.Name.Replace(" ", string.Empty);
+                        string url = $"http://77.68.95.193/fgicons/{formattedCat}.png";
+                        thumbnailUrl.Url = url;
+                        records.Title += finalVersion;
+                    }
+                    else
+                    {
+                        string formattedGoal = goal.Replace(" ", string.Empty).Replace("%", string.Empty);
+                        string url = $"http://77.68.95.193/fgicons/{formattedGoal}.png";
+                        thumbnailUrl.Url = url;
+                        records.Title += leaderboard.Category.Name + " | " + finalVersion;
+                    }
+
+                    string displayedTimeFormat = Program.timeFormat;
+                    if (leaderboard.Records.Count != 0)
+                    {
+                        if (leaderboard.Records.Any(x => x.Times.PrimaryISO.Value.Hours != 0))
+                        {
+                            displayedTimeFormat = Program.timeFormatWithHours;
+                        }
+                    }
+
+                    for (int i = 0; i < leaderboard.Records.Count(); i++)
+                    {
+                        string playerName = leaderboard.Records[i].Player.Name;
+                        string runTime = leaderboard.Records[i].Times.PrimaryISO.Value.ToString(displayedTimeFormat);
+                        records.AddField($"{i + 1}. {playerName} | {runTime}",
+                        leaderboard.Records[i].WebLink.AbsoluteUri);
+                    }
+
+                    await ctx.RespondAsync(embed: records);
                 }
             }
-
-
+            catch (ParsingException p)
+            {
+                await ctx.RespondAsync(p.Message);
+                await ctx.RespondAsync("Type !help for more info");
+            }
             catch (Exception e)
             {
-                await ctx.RespondAsync("Type !help for more info");
-
-                /* await ctx.RespondAsync(e.Source);
-                 await ctx.RespondAsync(e.Message);
-                 await ctx.RespondAsync(e.StackTrace);
-                 */
+                await ctx.RespondAsync($"Internal Error \n{goal} \n{categoryFgID} \n{e.Message} \n{e.Source} \n{e.StackTrace}");
             }
         }
+
         [Command("fgrecords")]
         public async Task FGRecordsNoVersion(CommandContext ctx, string category, string character)
         {
@@ -255,14 +267,17 @@ namespace RoboBot
         }
 
         [Command("fgrecords")]
-        public async Task FGRecordsNoVersionCharacter(CommandContext ctx, string category)
+        public async Task FGRecordsNoVersionNoCharacter(CommandContext ctx, string category)
         {
             await FgRecords(ctx, category, "sonic", "");
         }
 
+        [Command("fgrecords")]
+        public async Task Recordsoof2(CommandContext ctx)
+        {
+            await ctx.RespondAsync("No parameters given\nType !help for more info");
+        }
 
-
-      
         [Command("records")]
         public async Task Recordsoof(CommandContext ctx)
         {
@@ -310,7 +325,7 @@ namespace RoboBot
         private static Leaderboard FullGameLeaderboard(string goal, string categoryId, string version, string originalVer)
         {//
             IEnumerable<Variable> fgvariables = Program.srb2Game.FullGameCategories.First(x => x.ID == categoryId).Variables;
-            //List<VariableValue> value = fgvariables[0].Values.ToList();  
+            //List<VariableValue> value = fgvariables[0].Values.ToList();
             if (categoryId != "9d8pm0qk" && categoryId != "9d8pmg3k") // Not SRB1 or All Emblems
             {
                 if (originalVer == "")
@@ -318,23 +333,25 @@ namespace RoboBot
                     version = "2.2 Current";
                 }
                 IEnumerable<VariableValue> value = fgvariables.First(x => x.Name == "Goal").Values;
-                VariableValue categoryyyy = value.First(x => x.Value == goal);
+                VariableValue cat = value.First(x => x.Value == goal);
+
                 IEnumerable<VariableValue> vervalue = fgvariables.First(x => x.Name == "Version").Values;
-                VariableValue verrrr = vervalue.First(x => x.Value == version);
-                finalVersion = verrrr.Value;
-                IEnumerable<VariableValue> varValues = new VariableValue[] { categoryyyy, verrrr };
+                VariableValue ver = vervalue.First(x => x.Value == version);
+
+                finalVersion = ver.Value;
+                IEnumerable<VariableValue> varValues = new VariableValue[] { cat, ver };
                 return Program.srcClient.Leaderboards.GetLeaderboardForFullGameCategory(Program.gameId, categoryId, 5, variableFilters: varValues);
             }
-            else if(categoryId == "9d8pm0qk") // Srb1 Remake
+            else if (categoryId == "9d8pm0qk") // Srb1 Remake
             {
-                if(originalVer == "")
+                if (originalVer == "")
                 {
                     version = "2.1.X";
                 }
                 IEnumerable<VariableValue> vervalue = fgvariables.First(x => x.Name == "Version").Values;
-                VariableValue verrrr = vervalue.First(x => x.Value == version);
-                finalVersion = verrrr.Value;
-                IEnumerable<VariableValue> varValues = new VariableValue[] { verrrr };
+                VariableValue ver = vervalue.First(x => x.Value == version);
+                finalVersion = ver.Value;
+                IEnumerable<VariableValue> varValues = new VariableValue[] { ver };
                 return Program.srcClient.Leaderboards.GetLeaderboardForFullGameCategory(Program.gameId, categoryId, 5, variableFilters: varValues);
             }
             else if (categoryId == "9d8pmg3k") // Emblems
@@ -344,15 +361,13 @@ namespace RoboBot
                     version = "2.2 Current";
                 }
                 IEnumerable<VariableValue> vervalue = fgvariables.First(x => x.Name == "Version").Values;
-                VariableValue verrrr = vervalue.First(x => x.Value == version);
-                finalVersion = verrrr.Value;
-                IEnumerable<VariableValue> varValues = new VariableValue[] { verrrr };
+                VariableValue ver = vervalue.First(x => x.Value == version);
+                finalVersion = ver.Value;
+                IEnumerable<VariableValue> varValues = new VariableValue[] { ver };
                 return Program.srcClient.Leaderboards.GetLeaderboardForFullGameCategory(Program.gameId, categoryId, 5, variableFilters: varValues);
             }
 
             return null;
         }
-
-
     }
 }

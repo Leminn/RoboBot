@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 namespace RoboBot_SRB2
@@ -21,6 +20,7 @@ namespace RoboBot_SRB2
             return int.Parse(mapName.Remove(0, 3));
         }
     }
+
     public static class SRB2Enums
     {
         public static Dictionary<string, SRB2Level> levelsID = new Dictionary<string, SRB2Level>()
@@ -62,17 +62,14 @@ namespace RoboBot_SRB2
             {"BCZ2", new SRB2Level("rdnlgx5w", "Black Core Zone Act 2", "MAP26")},
             {"BCZ3", new SRB2Level("ldy50kpw", "Black Core Zone Act 3", "MAP27")},
 
-
             {"FHZ", new SRB2Level("gdr87oe9", "Frozen Hillside Zone", "MAP30")},
             {"PTZ", new SRB2Level("nwlyezo9", "Pipe Towers Zone", "MAP31")},
             {"FFZ", new SRB2Level("ywejp3ld", "Forest Fortress Zone", "MAP32")},
             {"TLZ", new SRB2Level("69zq06x9", "Techno Legacy Zone", "MAP33")},
 
-
             {"HHZ", new SRB2Level("r9gj8nj9", "Haunted Heights Zone", "MAP40")},
             {"AGZ", new SRB2Level("o9xz0o3w", "Aerial Garden Zone", "MAP41")},
             {"ATZ", new SRB2Level("495rnzmd", "Azure Temple Zone", "MAP42")},
-
 
             {"SS1", new SRB2Level("rdq3qoow", "Floral Field Zone", "MAP50")},
             {"SS2", new SRB2Level("5d7erxqw", "Toxic Plateau Zone", "MAP51")},
@@ -89,6 +86,7 @@ namespace RoboBot_SRB2
             {"APZ1", new SRB2Level("xd4y8eqd", "Alpine Paradise Zone Act 1", "MAP72")},
             {"APZ2", new SRB2Level("xd02onm9", "Alpine Paradise Zone Act 2", "MAP73")}
         };
+
         public static Dictionary<string, string> categoriesID = new Dictionary<string, string>()
         {
             {"sonic", "xd1g1j4d"},
@@ -134,7 +132,7 @@ namespace RoboBot_SRB2
 
             {"srb1", "9d8pm0qk"},
             {"srb1remake", "9d8pm0qk"},
-            
+
             {"100%", "9d8pmg3k"},
             {"200", "9d8pmg3k"},
             {"emblem", "9d8pmg3k"},
@@ -170,7 +168,7 @@ namespace RoboBot_SRB2
         {
             if (parameter == null)
             {
-                return "notfound";
+                return "Any%";
             }
 
             string goal = parameter.ToLower();
@@ -179,25 +177,31 @@ namespace RoboBot_SRB2
             {
                 case "any":
                     return "Any%";
+
                 case "any%":
                     return "Any%";
 
                 case "emeralds":
                     return "All Emeralds";
+
                 case "all":
                     return "All Emeralds";
+
                 case "allemeralds":
                     return "All Emeralds";
 
                 case "ultimate":
                     return "Ultimate";
+
                 case "ult":
                     return "Ultimate";
 
                 case "srb1":
                     return "SRB1 Remake";
+
                 case "remake":
                     return "SRB1 Remake";
+
                 case "srb1remake":
                     return "SRB1 Remake";
 
@@ -205,9 +209,8 @@ namespace RoboBot_SRB2
                     return "All Emblems";
 
                 default:
-                    return "notfound";
+                    return "Any%";
             }
         }
-
     }
 }
