@@ -47,7 +47,8 @@ namespace RoboBot
             });
 
             commands.RegisterCommands<MyCommands>();
-            DiscordActivity activity = new DiscordActivity("ps3", ActivityType.Playing);
+         //   DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
+            DiscordActivity activity = new DiscordActivity("GFZ1", ActivityType.ListeningTo);
 
             await discord.ConnectAsync(activity);
             await Task.Delay(-1);

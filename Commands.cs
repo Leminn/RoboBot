@@ -97,7 +97,7 @@ namespace RoboBot
                     DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
                     thumbnailUrl.Url = "http://77.68.95.193/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
                     DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
-                    embedFooter.Text = $"{Program.s.TotalRunsCount}";
+                    embedFooter.Text = RandomStat();
                     Random r = new Random();
                     int footerImgNum = r.Next(1, 21);
                     embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
@@ -141,6 +141,26 @@ namespace RoboBot
                 await ctx.RespondAsync("Internal Error");
                 await ctx.RespondAsync(e.Message);
             }
+        }
+
+        private string RandomStat()
+        {
+            Random r = new Random();
+            switch (r.Next(1, 5))
+            {
+                case 1:
+                    return $"There have been {Program.s.TotalRunsCount} runs submitted to SRC.";
+
+                case 2:
+                    return $"There have been {Program.s.FullRunsCount} full-game runs submitted to SRC.";
+
+                case 3:
+                    return $"There have been {Program.s.LevelRunsCount} individual-level runs submitted to SRC.";
+
+                case 4:
+                    return $"{Program.s.TotalTime} is the combined time of all records for SRB2.";
+            }
+            return "";
         }
 
         [Command("records")]
