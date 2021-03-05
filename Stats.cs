@@ -9,13 +9,37 @@ namespace RoboBot
 {
     public class Stats
     {
+        private Random r = new Random();
+        public string RandomStat()
+        {
+            switch (r.Next(1, 6))
+            {
+                case 1:
+                    return $"There have been {TotalRunsCount} runs submitted to SRC.";
+
+                case 2:
+                    return $"There have been {FullRunsCount} full-game runs submitted to SRC.";
+
+                case 3:
+                    return $"There have been {LevelRunsCount} individual-level runs submitted to SRC.";
+
+                case 4:
+                    return $"{(int)TotalTime.TotalHours}:{TotalTime.ToString(Program.timeFormatWithMinutes)} is the combined time of all records for SRB2.";
+
+                case 5:
+                    return $"{LatestRun}";
+            }
+            return "";
+        }
+
         private SpeedrunComClient Client;
         private Timer timer = new Timer(216000000) { AutoReset = true, Enabled = true }; //an hour
 
-        public int LevelRunsCount { get; private set; }
-        public int FullRunsCount { get; private set; }
-        public int TotalRunsCount { get; private set; }
-        public TimeSpan TotalTime { get; private set; }
+        private int LevelRunsCount { get; set; }
+        private int FullRunsCount { get; set; }
+        private int TotalRunsCount { get; set; }
+        private TimeSpan TotalTime { get; set; }
+        private string LatestRun { get; set; }
 
         public Stats(ref SpeedrunComClient client)
         {
@@ -52,6 +76,11 @@ namespace RoboBot
                 }
             }
 
+            Run latest = runs[runs.Count - 1];
+
+            string displayedTimeFormat = latest.Times.Primary.Value.Hours != 0 ? Program.timeFormatWithHours : (latest.Times.Primary.Value.Minutes != 0 ? Program.timeFormatWithMinutes : Program.timeFormat);
+
+            LatestRun = $"{latest.Times.Primary.Value.ToString(displayedTimeFormat)} on {latest.Level.Name} by {latest.Player.Name} is the latest record!";
             TotalTime = totalTime;
             FullRunsCount = fullRunsCount;
             LevelRunsCount = levelRunsCount;

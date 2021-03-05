@@ -13,7 +13,8 @@ namespace RoboBot
     internal class Program
     {
         public static string programDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        public static string timeFormat = @"mm\:ss\.ff";
+        public static string timeFormat = @"ss\.ff";
+        public static string timeFormatWithMinutes = @"mm\:ss\.ff";
         public static string timeFormatWithHours = @"hh\:mm\:ss\.ff";
         public static DiscordClient discord;
         public static string gameId = "76ryx418";
@@ -48,7 +49,7 @@ namespace RoboBot
 
             commands.RegisterCommands<MyCommands>();
          //   DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
-            DiscordActivity activity = new DiscordActivity("GFZ1", ActivityType.ListeningTo);
+            DiscordActivity activity = new DiscordActivity("greenflower", ActivityType.Playing);
 
             await discord.ConnectAsync(activity);
             await Task.Delay(-1);
