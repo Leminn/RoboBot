@@ -4,10 +4,13 @@ using DSharpPlus.Entities;
 using RoboBot_SRB2;
 using SpeedrunComSharp;
 using System;
-
+using FluentFTP;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net;
+using System.IO;
 
 namespace RoboBot
 {
@@ -19,6 +22,45 @@ namespace RoboBot
     public class MyCommands : BaseCommandModule
     {
         public static string finalVersion = "";
+        [Command("reptogif")]
+        public async Task ReplayToGif(CommandContext ctx)
+        {
+            string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
+            string hostName = ConfigurationManager.AppSettings["FTPName"];
+            string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
+            FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
+            client.Connect();
+            Console.WriteLine(client.ServerType);
+            if (ctx.Message.Attachments != null)
+            {
+                if (ctx.Message.Attachments.First().FileSize > 100000)
+                {
+                    await ctx.RespondAsync("too big");
+                }
+                using (WebClient wwwClient = new WebClient())
+                {
+                    wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
+                }
+                await ctx.RespondAsync("downloaded");
+                try
+                {
+
+                    FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
+                    byte[] fileBytes = File.ReadAllBytes(replay.FullName);
+                    client.Upload(fileBytes, $"/replaystogif/{replay.Name}", FtpExists.Skip);
+                }
+                catch (Exception e)
+                {
+                    await ctx.RespondAsync(e.Message);
+                    await ctx.RespondAsync(e.InnerException.Message);
+                }
+            }
+            else
+            {
+                await ctx.RespondAsync("no file attached");
+            }
+
+        }
 
         [Command("help")]
         public async Task HelpSheet(CommandContext ctx)
