@@ -1,6 +1,6 @@
 ﻿using DSharpPlus;
-using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using SpeedrunComSharp;
 using System;
 using System.Configuration;
@@ -48,7 +48,7 @@ namespace RoboBot
             });
 
             commands.RegisterCommands<MyCommands>();
-         //   DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
+            //   DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
             DiscordActivity activity = new DiscordActivity("greenflower", ActivityType.Playing);
 
             await discord.ConnectAsync(activity);

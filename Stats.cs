@@ -1,15 +1,16 @@
-﻿using System;
+﻿using SpeedrunComSharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Timers;
-using SpeedrunComSharp;
 
 namespace RoboBot
 {
     public class Stats
     {
         private Random r = new Random();
+
         public string RandomStat()
         {
             switch (r.Next(1, 6))
@@ -50,14 +51,14 @@ namespace RoboBot
 
         private void AnHourHasPassed(object sender, ElapsedEventArgs e)
         {
-            List<Run> runs = Client.Runs.GetRuns(gameId: Program.gameId, elementsPerPage: 200, status:RunStatusType.Verified, orderBy:RunsOrdering.Date).ToList();
+            List<Run> runs = Client.Runs.GetRuns(gameId: Program.gameId, elementsPerPage: 200, status: RunStatusType.Verified, orderBy: RunsOrdering.Date).ToList();
 
             int fullRunsCount = 0, levelRunsCount = 0;
             TimeSpan totalTime = new TimeSpan();
             Console.WriteLine(runs[runs.Count - 1].WebLink);
             foreach (Run run in runs)
             {
-                if(run.Times.RealTime.HasValue)
+                if (run.Times.RealTime.HasValue)
                 {
                     totalTime += run.Times.RealTime.Value;
                 }
@@ -86,7 +87,7 @@ namespace RoboBot
             LevelRunsCount = levelRunsCount;
             TotalRunsCount = fullRunsCount + levelRunsCount;
 
-            Console.WriteLine(string.Join('\n', TotalTime.Days*24 + TotalTime.Hours + ":" + TotalTime.ToString(@"mm\:ss\.ff"), FullRunsCount, LevelRunsCount, TotalRunsCount));
+            Console.WriteLine(string.Join('\n', TotalTime.Days * 24 + TotalTime.Hours + ":" + TotalTime.ToString(@"mm\:ss\.ff"), FullRunsCount, LevelRunsCount, TotalRunsCount));
         }
     }
 }
