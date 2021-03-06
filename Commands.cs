@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace RoboBot
 {
@@ -19,52 +20,81 @@ namespace RoboBot
         public ParsingException(string? message) : base(message) { }
     }
 
+
     public class MyCommands : BaseCommandModule
     {
+        public static DiscordChannel loool;
         public static string finalVersion = "";
         [Command("reptogif")]
         public async Task ReplayToGif(CommandContext ctx)
         {
-            string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
+            try {
+                await ctx.TriggerTypingAsync();
+            loool = ctx.Channel;
+                string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
             string hostName = ConfigurationManager.AppSettings["FTPName"];
             string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
             FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
+
             client.Connect();
             Console.WriteLine(client.ServerType);
-            if (ctx.Message.Attachments != null)
-            {
-                if (ctx.Message.Attachments.First().FileSize > 100000)
-                {
-                    await ctx.RespondAsync("too big");
-                }
-                using (WebClient wwwClient = new WebClient())
-                {
-                    wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
-                }
-                await ctx.RespondAsync("downloaded");
-                try
-                {
 
-                    FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
-                    byte[] fileBytes = File.ReadAllBytes(replay.FullName);
-                    client.Upload(fileBytes, $"/replaystogif/{replay.Name}", FtpExists.Skip);
-                }
-                catch (Exception e)
+                if (ctx.Message.Attachments != null)
                 {
-                    await ctx.RespondAsync(e.Message);
-                    await ctx.RespondAsync(e.InnerException.Message);
+                    if (ctx.Message.Attachments.First().FileSize > 100000)
+                    {
+                        await ctx.RespondAsync("too big");
+                    }
+                    using (WebClient wwwClient = new WebClient())
+                    {
+                        wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
+                    }
+                    try
+                    {
+                        
+                        FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
+                        byte[] fileBytes = File.ReadAllBytes(replay.FullName);
+                        client.Upload(fileBytes, $"/replaystogif/{replay.Name}.part", FtpRemoteExists.Skip);
+                        client.MoveFile($"/replaystogif/{replay.Name}.part", $"/replaystogif/{replay.Name}"); // renames on linux
+                        // client.Rename($"/replaystogif/{replay.Name}.part", replay.Name); this bad on linux
+
+
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                        {
+                            await loool.SendMessageAsync("Processing replay...");
+                            
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        await ctx.RespondAsync(e.Message);
+                        await ctx.RespondAsync(e.StackTrace);
+                        await ctx.RespondAsync(e.Source);
+                        await ctx.RespondAsync(e.InnerException.Message);
+                    }
+                }
+                else
+                {
+                    await ctx.RespondAsync("no file attached");
                 }
             }
-            else
+            catch (Exception e)
             {
-                await ctx.RespondAsync("no file attached");
+                await ctx.RespondAsync(e.Message);
+                await ctx.RespondAsync(e.InnerException.ToString());
+
             }
+
 
         }
+
+  
 
         [Command("help")]
         public async Task HelpSheet(CommandContext ctx)
         {
+
             var commandList = new DiscordEmbedBuilder
             {
                 Title = "Help",
