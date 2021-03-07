@@ -1,43 +1,70 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using FluentFTP;
 using RoboBot_SRB2;
 using SpeedrunComSharp;
 using System;
-using FluentFTP;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Net;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace RoboBot
 {
     public class ParsingException : Exception
     {
-        public ParsingException(string? message) : base(message) { }
+        public ParsingException(string? message) : base(message)
+        {
+        }
     }
-
 
     public class MyCommands : BaseCommandModule
     {
         public static DiscordChannel loool;
         public static string finalVersion = "";
+
+        [Command("queue")]
+        public async Task ReplayQueue(CommandContext ctx)
+        {
+            if (Program.convertQueue.Any())
+            {
+                var queueList = new DiscordEmbedBuilder
+                {
+                    Title = "Queue for Replay to Gif converter",
+                    Description = "Use this command to find where you are in the queue!",
+                    Color = DiscordColor.Wheat
+                };
+                for (int i = 0; i < Program.convertQueue.Count(); i++)
+                {
+                    var currentMember = Program.convertQueue[i];
+                    queueList.AddField($"{i + 1}.{currentMember.Member.DisplayName}", currentMember.Message.Attachments.First().FileName);
+                }
+                await ctx.RespondAsync(embed: queueList);
+            }
+            else
+            {
+                await ctx.RespondAsync("Queue is empty");
+            }
+        }
+
         [Command("reptogif")]
         public async Task ReplayToGif(CommandContext ctx)
         {
-            try {
+            try
+            {
                 await ctx.TriggerTypingAsync();
-            loool = ctx.Channel;
+                loool = ctx.Channel;
                 string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
-            string hostName = ConfigurationManager.AppSettings["FTPName"];
-            string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
-            FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
+                string hostName = ConfigurationManager.AppSettings["FTPName"];
+                string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
+                FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
 
-            client.Connect();
-            Console.WriteLine(client.ServerType);
+                client.Connect();
+                Console.WriteLine(client.ServerType);
 
                 if (ctx.Message.Attachments != null)
                 {
@@ -51,20 +78,17 @@ namespace RoboBot
                     }
                     try
                     {
-                        
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
                         byte[] fileBytes = File.ReadAllBytes(replay.FullName);
                         client.Upload(fileBytes, $"/replaystogif/{replay.Name}.part", FtpRemoteExists.Skip);
                         client.MoveFile($"/replaystogif/{replay.Name}.part", $"/replaystogif/{replay.Name}"); // renames on linux
                         // client.Rename($"/replaystogif/{replay.Name}.part", replay.Name); this bad on linux
 
-
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                         {
                             await loool.SendMessageAsync("Processing replay...");
-                            
+                            Program.convertQueue.Add(ctx);
                         }
-
                     }
                     catch (Exception e)
                     {
@@ -83,18 +107,12 @@ namespace RoboBot
             {
                 await ctx.RespondAsync(e.Message);
                 await ctx.RespondAsync(e.InnerException.ToString());
-
             }
-
-
         }
-
-  
 
         [Command("help")]
         public async Task HelpSheet(CommandContext ctx)
         {
-
             var commandList = new DiscordEmbedBuilder
             {
                 Title = "Help",
@@ -236,7 +254,6 @@ namespace RoboBot
                 if (!gotCatFg)
                 {
                     if (!SRB2Enums.fgCategoriesID.TryGetValue(category.ToLower(), out categoryFgID)) { categoryFgID = "ndx46012"; } // checking for all emblems / srb1 (since they're as the first argument when typing the command), if not defaulting to sonic
-
                 }
 
                 string goal;

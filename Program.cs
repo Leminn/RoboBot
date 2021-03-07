@@ -3,8 +3,9 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using SpeedrunComSharp;
 using System;
-using System.IO;
 using System.Configuration;
+using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -26,6 +27,8 @@ namespace RoboBot
         public static string gameId = "76ryx418";
         private static CommandsNextExtension commands;
 
+        public static List<CommandContext> convertQueue = new List<CommandContext>();
+       // public static DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
         public static Game srb2Game;
 
         public static SpeedrunComClient srcClient = new SpeedrunComClient(maxCacheElements: 0) { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
@@ -42,7 +45,10 @@ namespace RoboBot
         private static async Task MainAsync(string[] args)
         {
             gifWatcher.EnableRaisingEvents = true;
+           // gifWatcher.Filters.Add("status.txt");
+           // gifWatcher.NotifyFilter = NotifyFilters.FileName;
             gifWatcher.Created += OnCreated;
+            gifWatcher.Changed += OnCreated;
             discord = new DiscordClient(new DiscordConfiguration
             {
                 Token = ConfigurationManager.AppSettings["APIKey"],
@@ -56,7 +62,7 @@ namespace RoboBot
             });
 
             commands.RegisterCommands<MyCommands>();
-            //   DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
+
             DiscordActivity activity = new DiscordActivity("greenflower", ActivityType.Playing);
 
             await discord.ConnectAsync(activity);
@@ -65,17 +71,33 @@ namespace RoboBot
 
         private static void OnCreated(object sender, FileSystemEventArgs e)
         {
+
             FileInfo filestuff = new FileInfo(e.FullPath);
-            if (filestuff.Extension == ".gif")
+            switch (filestuff.Extension)
             {
-                int i = 0;
-                string filePath = "/var/www/html/finishedgifs/";
-                while (File.Exists(e.FullPath))
-                {
-                    if (!File.Exists($"{filePath}{i}.gif")) { System.IO.File.Move(e.FullPath, $"{filePath}{i}.gif"); }
-                    else { i++; }
-                }
-                MyCommands.loool.SendMessageAsync($"http://77.68.95.193/finishedgifs/{i}.gif");
+                case ".gif":
+                    int i = 0;
+                    string filePath = "/var/www/html/finishedgifs/";
+                    while (File.Exists(e.FullPath))
+                    {
+                        if (!File.Exists($"{filePath}{i}.gif")) { System.IO.File.Move(e.FullPath, $"{filePath}{i}.gif"); }
+                        else { i++; }
+                    }
+                    var msg = new DiscordMessageBuilder()
+                        .WithContent($"http://77.68.95.193/finishedgifs/{i}.gif")
+                        .WithReply(convertQueue[0].Message.Id, true)
+                        .SendAsync(convertQueue[0].Channel);
+                    convertQueue.RemoveAt(0);
+                    if(convertQueue.Any())
+                    {
+                        MyCommands.loool.SendMessageAsync("Replay sent by " + convertQueue[0].Member.DisplayName + " is next");
+                    }
+                    break;
+
+                case ".txt":
+                    string txtContents = File.ReadAllText(e.FullPath);
+                    if (!txtContents.Contains("ok")) { MyCommands.loool.SendMessageAsync(txtContents); };
+                    break;
             }
         }
     }

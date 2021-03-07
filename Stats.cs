@@ -87,7 +87,7 @@ namespace RoboBot
             LevelRunsCount = levelRunsCount;
             TotalRunsCount = fullRunsCount + levelRunsCount;
 
-           // Console.WriteLine(string.Join('\n', TotalTime.Days * 24 + TotalTime.Hours + ":" + TotalTime.ToString(@"mm\:ss\.ff"), FullRunsCount, LevelRunsCount, TotalRunsCount));
+            // Console.WriteLine(string.Join('\n', TotalTime.Days * 24 + TotalTime.Hours + ":" + TotalTime.ToString(@"mm\:ss\.ff"), FullRunsCount, LevelRunsCount, TotalRunsCount));
         }
     }
 }
