@@ -43,10 +43,12 @@ namespace RoboBot
                 Description = "Here are the addons available for use with the converter.",
                 Color = DiscordColor.Gold
             };
+            string modList = "";
             for (int i = 0; i < addons.Length; i++)
             {
-                addonList.AddField($"{i + 1}.", addons[i].Name);
+                modList += addons[i].Name + ", ";
             }
+            addonList.AddField($"Installed Addons", modList);
             await ctx.RespondAsync(embed: addonList);
 
         }

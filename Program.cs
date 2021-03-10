@@ -93,7 +93,12 @@ namespace RoboBot
 
                 case ".txt":
                     string txtContents = File.ReadAllText(e.FullPath);
-                    if (!txtContents.Contains("ok")) { MyCommands.loool.SendMessageAsync(txtContents); };
+                    if (!txtContents.Contains("ok")) 
+                    { 
+                        MyCommands.loool.SendMessageAsync(txtContents);
+                        convertQueue.RemoveAt(0);
+                    }
+
                     break;
             }
         }
