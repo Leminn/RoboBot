@@ -27,6 +27,30 @@ namespace RoboBot
         public static DiscordChannel loool;
         public static string finalVersion = "";
 
+        [Command("addons")]
+        public async Task AddonsInfo(CommandContext ctx)
+        {
+            string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
+            string hostName = ConfigurationManager.AppSettings["FTPName"];
+            string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
+            FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
+
+            client.Connect();
+            FtpListItem[] addons = client.GetListing("/addons");
+            var addonList = new DiscordEmbedBuilder
+            {
+                Title = "Addons for Replay2Gif",
+                Description = "Here are the addons available for use with the converter.",
+                Color = DiscordColor.Gold
+            };
+            for (int i = 0; i < addons.Length; i++)
+            {
+                addonList.AddField($"{i+1}." , addons[i].Name);
+            } 
+            await ctx.RespondAsync(embed: addonList);
+
+        }
+
         [Command("queue")]
         public async Task ReplayQueue(CommandContext ctx)
         {
@@ -36,7 +60,7 @@ namespace RoboBot
                 {
                     Title = "Queue for Replay to Gif converter",
                     Description = "Use this command to find where you are in the queue!",
-                    Color = DiscordColor.Wheat
+                    Color = DiscordColor.Gold
                 };
                 for (int i = 0; i < Program.convertQueue.Count(); i++)
                 {
@@ -52,12 +76,22 @@ namespace RoboBot
         }
 
         [Command("reptogif")]
-        public async Task ReplayToGif(CommandContext ctx)
+        public async Task ReplayToGifNoAddons(CommandContext ctx)
+        {
+            await ReplayToGifWithAddons(ctx, null);
+        }
+
+        [Command("reptogif")]
+        public async Task ReplayToGifWithAddons(CommandContext ctx, params string[] addons)
         {
             try
             {
                 await ctx.TriggerTypingAsync();
+                JobInfo thejoblol = addons != null ? JobInfo.CreateFromStrings((byte)addons.Length, addons) : JobInfo.NoAddons;
+                byte[] thebyteslol = thejoblol.ToBytes();
+
                 loool = ctx.Channel;
+
                 string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
                 string hostName = ConfigurationManager.AppSettings["FTPName"];
                 string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
@@ -75,18 +109,21 @@ namespace RoboBot
                     using (WebClient wwwClient = new WebClient())
                     {
                         wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
+                        
                     }
                     try
                     {
+                        
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
-                        byte[] fileBytes = File.ReadAllBytes(replay.FullName);
+                        byte[] fileBytes = File.ReadAllBytes(replay.FullName).Concat(thebyteslol).ToArray();
                         client.Upload(fileBytes, $"/replaystogif/{replay.Name}.part", FtpRemoteExists.Skip);
                         client.MoveFile($"/replaystogif/{replay.Name}.part", $"/replaystogif/{replay.Name}"); // renames on linux
+                        File.Delete(replay.FullName);
                         // client.Rename($"/replaystogif/{replay.Name}.part", replay.Name); this bad on linux
-
+                        
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                         {
-                            await loool.SendMessageAsync("Processing replay...");
+                            await ctx.RespondAsync("Processing replay...");
                             Program.convertQueue.Add(ctx);
                         }
                     }
@@ -106,7 +143,9 @@ namespace RoboBot
             catch (Exception e)
             {
                 await ctx.RespondAsync(e.Message);
-                await ctx.RespondAsync(e.InnerException.ToString());
+                await ctx.RespondAsync(e.StackTrace);
+                await ctx.RespondAsync(e.Source);
+                await ctx.RespondAsync(e.InnerException.Message);
             }
         }
 

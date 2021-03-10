@@ -77,14 +77,11 @@ namespace RoboBot
             {
                 case ".gif":
                     int i = 0;
-                    string filePath = "/var/www/html/finishedgifs/";
-                    while (File.Exists(e.FullPath))
-                    {
-                        if (!File.Exists($"{filePath}{i}.gif")) { System.IO.File.Move(e.FullPath, $"{filePath}{i}.gif"); }
-                        else { i++; }
-                    }
+                    string filePath = $"/var/www/html/finishedgifs/";
+                    string imageCode = Path.GetRandomFileName();
+                    File.Move(e.FullPath, $"{filePath}{imageCode}.gif"); 
                     var msg = new DiscordMessageBuilder()
-                        .WithContent($"http://77.68.95.193/finishedgifs/{i}.gif")
+                        .WithContent($"http://77.68.95.193/finishedgifs/{imageCode}.gif")
                         .WithReply(convertQueue[0].Message.Id, true)
                         .SendAsync(convertQueue[0].Channel);
                     convertQueue.RemoveAt(0);
