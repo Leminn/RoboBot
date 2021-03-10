@@ -45,8 +45,8 @@ namespace RoboBot
             };
             for (int i = 0; i < addons.Length; i++)
             {
-                addonList.AddField($"{i+1}." , addons[i].Name);
-            } 
+                addonList.AddField($"{i + 1}.", addons[i].Name);
+            }
             await ctx.RespondAsync(embed: addonList);
 
         }
@@ -109,18 +109,18 @@ namespace RoboBot
                     using (WebClient wwwClient = new WebClient())
                     {
                         wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
-                        
+
                     }
                     try
                     {
-                        
+
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
                         byte[] fileBytes = File.ReadAllBytes(replay.FullName).Concat(thebyteslol).ToArray();
                         client.Upload(fileBytes, $"/replaystogif/{replay.Name}.part", FtpRemoteExists.Skip);
                         client.MoveFile($"/replaystogif/{replay.Name}.part", $"/replaystogif/{replay.Name}"); // renames on linux
                         File.Delete(replay.FullName);
                         // client.Rename($"/replaystogif/{replay.Name}.part", replay.Name); this bad on linux
-                        
+
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                         {
                             await ctx.RespondAsync("Processing replay...");
@@ -150,19 +150,48 @@ namespace RoboBot
         }
 
         [Command("help")]
-        public async Task HelpSheet(CommandContext ctx)
+        public async Task Help(CommandContext ctx)
         {
-            var commandList = new DiscordEmbedBuilder
-            {
-                Title = "Help",
-                Description = "The !records command can be used for ILs while !fgrecords is used for Full-game Runs\n\n IL: !records (level) (character) \n FG: !fgrecords (category) (character) (version) \n\n For SRB1 Remake and All Emblems you don't need to put the character.",
-                Color = DiscordColor.Gold
-            };
-            commandList.AddField("IL Example", "!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
-            commandList.AddField("Full-game Example", "!fgrecords any% knuckles 2.1 = Knuckles Any% 2.1");
-            commandList.AddField("Full-game Example 2", "!fgrecords emblems 2.1 = All Emblems 2.1");
+            await HelpSheet(ctx, " ");
+        }
 
-            await ctx.RespondAsync(embed: commandList);
+        [Command("help")]
+        public async Task HelpSheet(CommandContext ctx, string command)
+        {
+            DiscordEmbedBuilder commandList;
+            switch (command)
+            {
+                case "records":
+                    commandList = new DiscordEmbedBuilder
+                    {
+                        Title = "Help (!records)",
+                        Description = "The !records command can be used for ILs while !fgrecords is used for Full-game Runs\n\n IL: !records (level) (character) \n FG: !fgrecords (category) (character) (version) \n\n For SRB1 Remake and All Emblems you don't need to put the character.",
+                        Color = DiscordColor.Gold
+                    };
+                    commandList.AddField("IL Example", "!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
+                    commandList.AddField("Full-game Example", "!fgrecords any% knuckles 2.1 = Knuckles Any% 2.1");
+                    commandList.AddField("Full-game Example 2", "!fgrecords emblems 2.1 = All Emblems 2.1");
+                    await ctx.RespondAsync(embed: commandList);
+                    break;
+
+                case "reptogif":
+                    commandList = new DiscordEmbedBuilder
+                    {
+                        Title = "Help (!reptogif)",
+                        Description = "Use !reptogif and attach a file to convert your replay to a gif file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptogif (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted.",
+                        Color = DiscordColor.Gold
+                    };
+                    await ctx.RespondAsync(embed: commandList);
+                    break;
+
+                default:
+                    await ctx.RespondAsync("Enter either !help records or !help reptogif");
+                    break;
+
+
+            }
+
+
         }
 
         [Command("site")]
