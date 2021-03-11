@@ -45,7 +45,7 @@ namespace RoboBot
         private static async Task MainAsync(string[] args)
         {
             gifWatcher.EnableRaisingEvents = true;
-           // gifWatcher.Filters.Add("status.txt");
+            gifWatcher.Filters.Add("status.txt"); //maybe this will make it work better idfk then you'd have to handle the rename and stuff in the case .gif
            // gifWatcher.NotifyFilter = NotifyFilters.FileName;
             gifWatcher.Created += OnCreated;
             gifWatcher.Changed += OnCreated;
@@ -75,8 +75,8 @@ namespace RoboBot
             FileInfo filestuff = new FileInfo(e.FullPath);
             switch (filestuff.Extension)
             {
+                /*
                 case ".gif":
-                    int i = 0;
                     string filePath = $"/var/www/html/finishedgifs/";
                     string imageCode = Path.GetRandomFileName();
                     File.Move(e.FullPath, $"{filePath}{imageCode}.gif"); 
@@ -89,16 +89,39 @@ namespace RoboBot
                     {
                         MyCommands.loool.SendMessageAsync("Replay sent by " + convertQueue[0].Member.DisplayName + " is next");
                     }
-                    break;
+                    break;*/
 
                 case ".txt":
                     string txtContents = File.ReadAllText(e.FullPath);
-                    if (!txtContents.Contains("ok")) 
-                    { 
-                        MyCommands.loool.SendMessageAsync(txtContents);
-                        convertQueue.RemoveAt(0);
+                    if (txtContents != "ok")
+                    {
+                        var msg = new DiscordMessageBuilder()
+                            .WithContent(txtContents)
+                            .WithReply(convertQueue[0].Message.Id)
+                            .SendAsync(convertQueue[0].Channel);
                     }
-
+                    else
+                    {
+                        string filePath = $"/var/www/html/finishedgifs/";
+                        string imageCode = Path.GetRandomFileName();
+                        File.Move("/var/www/html/gifs/torename.gif", $"{filePath}{imageCode}.gif");
+                        var msg = new DiscordMessageBuilder()
+                            .WithContent($"http://77.68.95.193/finishedgifs/{imageCode}.gif")
+                            .WithReply(convertQueue[0].Message.Id, true)
+                            .SendAsync(convertQueue[0].Channel);
+                      
+                        
+                    }
+                    convertQueue.RemoveAt(0);
+                    if (convertQueue.Any())
+                    {
+                        var msg = new DiscordMessageBuilder()
+                            .WithContent("This replay is next.")
+                            .WithReply(convertQueue[0].Message.Id)
+                            .SendAsync(convertQueue[0].Channel);
+                    }
+                    
+                    File.Delete(e.FullPath);
                     break;
             }
         }
