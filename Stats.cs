@@ -47,6 +47,7 @@ namespace RoboBot
             Client = client;
             AnHourHasPassed(null, null);
             timer.Elapsed += AnHourHasPassed;
+            timer.Start();
         }
 
         private void AnHourHasPassed(object sender, ElapsedEventArgs e)
