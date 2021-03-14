@@ -34,7 +34,7 @@ namespace RoboBot
         }
 
         private SpeedrunComClient Client;
-        private Timer timer = new Timer(216000000) { AutoReset = true, Enabled = true }; //an hour
+        private Timer timer = new Timer(1_800_000) { AutoReset = true, Enabled = true }; //30 minutes (and not 60 hours as i've put before...)
 
         private int LevelRunsCount { get; set; }
         private int FullRunsCount { get; set; }
@@ -52,7 +52,7 @@ namespace RoboBot
 
         private void AnHourHasPassed(object sender, ElapsedEventArgs e)
         {
-            List<Run> runs = Client.Runs.GetRuns(gameId: Program.gameId, elementsPerPage: 200, status: RunStatusType.Verified, orderBy: RunsOrdering.Date).ToList();
+            List<Run> runs = Client.Runs.GetRuns(gameId: Program.gameId, elementsPerPage: 200, status: RunStatusType.Verified, orderBy: RunsOrdering.VerifyDate).ToList();
 
             int fullRunsCount = 0, levelRunsCount = 0;
             TimeSpan totalTime = new TimeSpan();
@@ -82,7 +82,7 @@ namespace RoboBot
 
             string displayedTimeFormat = latest.Times.Primary.Value.Hours != 0 ? Program.timeFormatWithHours : (latest.Times.Primary.Value.Minutes != 0 ? Program.timeFormatWithMinutes : Program.timeFormat);
 
-            LatestRun = $"{latest.Times.Primary.Value.ToString(displayedTimeFormat)} on {latest.Level.Name} by {latest.Player.Name} is the latest record!";
+            LatestRun = $"{latest.Times.Primary.Value.ToString(displayedTimeFormat)} on {latest.Level.Name} by {latest.Player.Name} is the latest verified record!";
             TotalTime = totalTime;
             FullRunsCount = fullRunsCount;
             LevelRunsCount = levelRunsCount;
