@@ -120,12 +120,12 @@ namespace RoboBot
                         byte[] fileBytes = File.ReadAllBytes(replay.FullName).Concat(addonsBytes).ToArray();
                         string addonPath = "";
                         string version = "";
-                        if (fileBytes[12] == 201)
+                        if (fileBytes[12] == 201) // this checks for 2.1
                         {
                             addonPath = $"/.srb21/addons/";
                             version = "2.1";
                         }
-                        else if (fileBytes[12] == 202)
+                        else if (fileBytes[12] == 202) // 2.2 check
                         {
                             addonPath = $"/addons/";
                             version = "2.2";
