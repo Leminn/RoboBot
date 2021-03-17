@@ -32,7 +32,8 @@ namespace RoboBot
         {
             FtpClient client = PiFTP();
             client.Connect();
-            FtpListItem[] addons = client.GetListing("/addons");
+            FtpListItem[] addons21 = client.GetListing("/.srb21/addons/");
+            FtpListItem[] addons22 = client.GetListing("/addons");
             var addonList = new DiscordEmbedBuilder
             {
                 Title = "Addons for Replay2Gif",
@@ -40,11 +41,18 @@ namespace RoboBot
                 Color = DiscordColor.Gold
             };
             string modList = "";
-            for (int i = 0; i < addons.Length; i++)
+            for (int i = 0; i < addons22.Length; i++)
             {
-                modList += addons[i].Name + ", ";
+                modList += addons22[i].Name + ", ";
             }
-            addonList.AddField($"Installed Addons", modList);
+
+            addonList.AddField($"2.2 Addons", modList);
+            modList = "";
+            for (int i = 0; i < addons21.Length; i++)
+            {
+                modList += addons21[i].Name + ", ";
+            }
+            addonList.AddField($"2.1 Addons", modList);
             await ctx.RespondAsync(embed: addonList);
         }
 
@@ -128,7 +136,7 @@ namespace RoboBot
                             return;
                         }
                         string confirmationMessage = $"Processing {version} replay";
-                        if (addons.Length != 0)
+                        if (addons != null)
                         {
                             for (int i = 0; i < addons.Length; i++)
                             {
@@ -138,7 +146,7 @@ namespace RoboBot
                                     return;
                                 }
                             }
-                            string.Concat(confirmationMessage, " with addons" + string.Join(" ", addons));
+                            confirmationMessage += " with addons " + string.Join(" ", addons);
                         }
                         else
                         {
