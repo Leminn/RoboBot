@@ -24,17 +24,13 @@ namespace RoboBot
 
     public class MyCommands : BaseCommandModule
     {
-        public static DiscordChannel loool;
+        public static DiscordChannel currentChannel;
         public static string finalVersion = "";
 
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
-            string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
-            string hostName = ConfigurationManager.AppSettings["FTPName"];
-            string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
-            FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
-
+            FtpClient client = PiFTP();
             client.Connect();
             FtpListItem[] addons = client.GetListing("/addons");
             var addonList = new DiscordEmbedBuilder
@@ -50,7 +46,6 @@ namespace RoboBot
             }
             addonList.AddField($"Installed Addons", modList);
             await ctx.RespondAsync(embed: addonList);
-
         }
 
         [Command("queue")]
@@ -89,43 +84,76 @@ namespace RoboBot
             try
             {
                 await ctx.TriggerTypingAsync();
-                JobInfo thejoblol = addons != null ? JobInfo.CreateFromStrings((byte)addons.Length, addons) : JobInfo.NoAddons;
-                byte[] thebyteslol = thejoblol.ToBytes();
+                JobInfo addonsJobInfo = addons != null ? JobInfo.CreateFromStrings((byte)addons.Length, addons) : JobInfo.NoAddons;
+                byte[] addonsBytes = addonsJobInfo.ToBytes();
 
-                loool = ctx.Channel;
+                currentChannel = ctx.Channel;
 
-                string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
-                string hostName = ConfigurationManager.AppSettings["FTPName"];
-                string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
-                FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
+                FtpClient client = PiFTP();
 
                 client.Connect();
-                Console.WriteLine(client.ServerType);
 
-                if (ctx.Message.Attachments != null)
+                if (ctx.Message.Attachments.Count != 0)
                 {
                     if (ctx.Message.Attachments.First().FileSize > 100000)
                     {
-                        await ctx.RespondAsync("too big");
+                        await ctx.RespondAsync("File is too big.");
+                        return;
                     }
                     using (WebClient wwwClient = new WebClient())
                     {
                         wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
-
                     }
+
                     try
                     {
-
+                        
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
-                        byte[] fileBytes = File.ReadAllBytes(replay.FullName).Concat(thebyteslol).ToArray();
+                        byte[] fileBytes = File.ReadAllBytes(replay.FullName).Concat(addonsBytes).ToArray();
+                        string addonPath = "";
+                        string version = "";
+                        if (fileBytes[12] == 201)
+                        {
+                            addonPath = $"/.srb21/addons/";
+                            version = "2.1";
+                        }
+                        else if (fileBytes[12] == 202)
+                        {
+                            addonPath = $"/addons/";
+                            version = "2.2";
+                        }
+                        else
+                        {
+                            await ctx.RespondAsync("The demo was not played in 2.1 or 2.2");
+                            return;
+                        }
+                        string confirmationMessage = $"Processing {version} replay";
+                        if (addons.Length != 0)
+                        {
+                            for (int i = 0; i < addons.Length; i++)
+                            {
+                                if (!client.FileExists($"{addonPath}/{addons[i]}"))
+                                {
+                                    await ctx.RespondAsync("Addon does not exist on the server.");
+                                    return;
+                                }
+                            }
+                            string.Concat(confirmationMessage, " with addons" + string.Join(" ", addons));
+                        }
+                        else
+                        {
+
+                        }
+
                         client.Upload(fileBytes, $"/replaystogif/{replay.Name}.part", FtpRemoteExists.Skip);
                         client.MoveFile($"/replaystogif/{replay.Name}.part", $"/replaystogif/{replay.Name}"); // renames on linux
                         File.Delete(replay.FullName);
                         // client.Rename($"/replaystogif/{replay.Name}.part", replay.Name); this bad on linux
 
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+
                         {
-                            await ctx.RespondAsync("Processing replay...");
+                            await ctx.RespondAsync(confirmationMessage);
                             Program.convertQueue.Add(ctx);
                         }
                     }
@@ -139,7 +167,7 @@ namespace RoboBot
                 }
                 else
                 {
-                    await ctx.RespondAsync("no file attached");
+                    await ctx.RespondAsync("No file attached.");
                 }
             }
             catch (Exception e)
@@ -189,11 +217,7 @@ namespace RoboBot
                 default:
                     await ctx.RespondAsync("Enter either !help records or !help reptogif");
                     break;
-
-
             }
-
-
         }
 
         [Command("site")]
@@ -480,6 +504,15 @@ namespace RoboBot
                     records.Color = DiscordColor.CornflowerBlue;
                     break;
             }
+        }
+
+        private static FtpClient PiFTP()
+        {
+            string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
+            string hostName = ConfigurationManager.AppSettings["FTPName"];
+            string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
+            FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
+            return client;
         }
 
         private static Leaderboard FullGameLeaderboard(string goal, string categoryId, string version, string originalVer)

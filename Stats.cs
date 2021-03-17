@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Timers;
 
 namespace RoboBot
@@ -82,7 +81,14 @@ namespace RoboBot
 
             string displayedTimeFormat = latest.Times.Primary.Value.Hours != 0 ? Program.timeFormatWithHours : (latest.Times.Primary.Value.Minutes != 0 ? Program.timeFormatWithMinutes : Program.timeFormat);
 
-            LatestRun = $"{latest.Times.Primary.Value.ToString(displayedTimeFormat)} on {latest.Level.Name} by {latest.Player.Name} is the latest verified record!";
+            if (latest.Level != null)
+            {
+                LatestRun = $"{latest.Times.Primary.Value.ToString(displayedTimeFormat)} on {latest.Level.Name} by {latest.Player.Name} is the latest verified IL record!";
+            }
+            else
+            {
+                LatestRun = $"{latest.WebLink.AbsoluteUri} is the latest full-game record by {latest.Player}";
+            }
             TotalTime = totalTime;
             FullRunsCount = fullRunsCount;
             LevelRunsCount = levelRunsCount;

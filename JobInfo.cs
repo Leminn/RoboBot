@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Text;
-using System.IO;
 
 namespace RoboBot
 {
-    class JobInfo
+    internal class JobInfo
     {
-        class BadJobException<T> : Exception
+        private class BadJobException<T> : Exception
         {
             public override string Message { get; }
             public T Property { get; }
@@ -48,10 +47,12 @@ namespace RoboBot
 
             AddonsFileNames = addonsFileNames;
         }
+
         public JobInfo()
         {
             HasAddons = false;
         }
+
         public byte[] ToBytes()
         {
             byte[] bytes = new byte[202];
@@ -77,6 +78,7 @@ namespace RoboBot
             bytes[0] = 0;
             return bytes;
         }
+
         public static JobInfo FromBytes(ref byte[] bytes)
         {
             if (bytes[0] == 1)

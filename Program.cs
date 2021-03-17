@@ -2,10 +2,9 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using SpeedrunComSharp;
-using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -14,10 +13,6 @@ namespace RoboBot
 {
     internal class Program
     {
-        public static string programDirectory = AppDomain.CurrentDomain.BaseDirectory;
-        public static DirectoryInfo dinfo = new DirectoryInfo(programDirectory);
-
-        public static string homeFolder = dinfo.Parent.Parent.FullName; // /root/
         public static FileSystemWatcher gifWatcher = new FileSystemWatcher("/var/www/html/gifs/");
 
         public static string timeFormat = @"ss\.ff";
@@ -28,7 +23,8 @@ namespace RoboBot
         private static CommandsNextExtension commands;
 
         public static List<CommandContext> convertQueue = new List<CommandContext>();
-       // public static DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
+
+        // public static DiscordEmoji pog = DiscordEmoji.FromGuildEmote(discord, 805598061346291722);
         public static Game srb2Game;
 
         public static SpeedrunComClient srcClient = new SpeedrunComClient(maxCacheElements: 0) { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
@@ -46,7 +42,7 @@ namespace RoboBot
         {
             gifWatcher.EnableRaisingEvents = true;
             gifWatcher.Filters.Add("status.txt"); //maybe this will make it work better idfk then you'd have to handle the rename and stuff in the case .gif
-           // gifWatcher.NotifyFilter = NotifyFilters.FileName;
+                                                  // gifWatcher.NotifyFilter = NotifyFilters.FileName;
             gifWatcher.Created += OnCreated;
             gifWatcher.Changed += OnCreated;
             discord = new DiscordClient(new DiscordConfiguration
@@ -71,7 +67,6 @@ namespace RoboBot
 
         private static void OnCreated(object sender, FileSystemEventArgs e)
         {
-
             FileInfo filestuff = new FileInfo(e.FullPath);
             switch (filestuff.Extension)
             {
@@ -79,7 +74,7 @@ namespace RoboBot
                 case ".gif":
                     string filePath = $"/var/www/html/finishedgifs/";
                     string imageCode = Path.GetRandomFileName();
-                    File.Move(e.FullPath, $"{filePath}{imageCode}.gif"); 
+                    File.Move(e.FullPath, $"{filePath}{imageCode}.gif");
                     var msg = new DiscordMessageBuilder()
                         .WithContent($"http://77.68.95.193/finishedgifs/{imageCode}.gif")
                         .WithReply(convertQueue[0].Message.Id, true)
@@ -109,8 +104,6 @@ namespace RoboBot
                             .WithContent($"http://77.68.95.193/finishedgifs/{imageCode}.gif")
                             .WithReply(convertQueue[0].Message.Id, true)
                             .SendAsync(convertQueue[0].Channel);
-                      
-                        
                     }
                     convertQueue.RemoveAt(0);
                     if (convertQueue.Any())
@@ -120,7 +113,6 @@ namespace RoboBot
                             .WithReply(convertQueue[0].Message.Id)
                             .SendAsync(convertQueue[0].Channel);
                     }
-                    
                     File.Delete(e.FullPath);
                     break;
             }
