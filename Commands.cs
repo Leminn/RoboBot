@@ -125,7 +125,7 @@ namespace RoboBot
                             addonPath = $"/.srb21/addons/";
                             version = "2.1";
                         }
-                        else if (fileBytes[12] == 202) // 2.2 check
+                        else if (fileBytes[12] == 202) // 2.2 check...
                         {
                             addonPath = $"/addons/";
                             version = "2.2";
