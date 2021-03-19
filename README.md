@@ -8,7 +8,7 @@ The bot can also work with a remote device that is running [this program by Refr
 
 Records command   |  Replay to gif command
 :----------------:|:----------------------:
-![Records command example](ExampleRecords.gif)  |  ![Replay to gif converter](ExampleRepToGif.gif)
+ ![Replay to gif converter](ExampleRepToGif.gif) |  ![Records command example](ExampleRecords.gif) 
 
 ## Contributors
 
