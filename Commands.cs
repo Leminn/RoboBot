@@ -22,7 +22,7 @@ namespace RoboBot
         }
     }
 
-    public class MyCommands : BaseCommandModule
+    public class Commands : BaseCommandModule
     {
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
@@ -40,20 +40,21 @@ namespace RoboBot
                 Description = "Here are the addons available for use with the converter.",
                 Color = DiscordColor.Gold
             };
-            string modList = "";
-            for (int i = 0; i < addons22.Length; i++)
-            {
-                modList += addons22[i].Name + ", ";
-            }
 
-            addonList.AddField($"2.2 Addons", modList);
-            modList = "";
-            for (int i = 0; i < addons21.Length; i++)
-            {
-                modList += addons21[i].Name + ", ";
-            }
-            addonList.AddField($"2.1 Addons", modList);
+            addonList.AddField($"2.2 Addons", MakeModList(addons22));
+            addonList.AddField($"2.1 Addons", MakeModList(addons21));
             await ctx.RespondAsync(embed: addonList);
+        }
+
+        private static string MakeModList(FtpListItem[] mods)
+        {
+            string modList = "";
+            foreach (var mod in mods)
+            {
+                modList += mod.Name;
+                if (mod != mods.Last()) modList += ", ";
+            }
+            return modList;
         }
 
         [Command("queue")]
@@ -81,10 +82,8 @@ namespace RoboBot
         }
 
         [Command("reptogif")]
-        public async Task ReplayToGifNoAddons(CommandContext ctx)
-        {
-            await ReplayToGifWithAddons(ctx, null);
-        }
+        public async Task ReplayToGifNoAddons(CommandContext ctx) => await ReplayToGifWithAddons(ctx, null);
+        
 
         [Command("reptogif")]
         public async Task ReplayToGifWithAddons(CommandContext ctx, params string[] addons)
@@ -120,12 +119,12 @@ namespace RoboBot
                         byte[] fileBytes = File.ReadAllBytes(replay.FullName).Concat(addonsBytes).ToArray();
                         string addonPath = "";
                         string version = "";
-                        if (fileBytes[12] == 201) // this checks for 2.1
+                        if (fileBytes[12] == 201) 
                         {
                             addonPath = $"/.srb21/addons/";
                             version = "2.1";
                         }
-                        else if (fileBytes[12] == 202) // 2.2 check...
+                        else if (fileBytes[12] == 202) 
                         {
                             addonPath = $"/addons/";
                             version = "2.2";
@@ -146,7 +145,7 @@ namespace RoboBot
                                     return;
                                 }
                             }
-                            confirmationMessage += " with addons " + string.Join(" ", addons);
+                            confirmationMessage += " with addon(s) " + string.Join(" ", addons);
                         }
                         else
                         {
@@ -285,32 +284,21 @@ namespace RoboBot
                     );
 
                     DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
-                    thumbnailUrl.Url = "http://77.68.95.193/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
+                    thumbnailUrl.Url = @"https://roborecords.org/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
                     DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
                     embedFooter.Text = Program.s.RandomStat();
                     Random r = new Random();
                     int footerImgNum = r.Next(1, 21);
-                    embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
+                    embedFooter.IconUrl = $"https://roborecords.org/footerimgs/{footerImgNum}.png";
                     var records = new DiscordEmbedBuilder
                     {
-                        Title = srb2Level.FullName,
+                        Title = srb2Level.FullName + " | " + leaderboard.Category.Name,
                         Thumbnail = thumbnailUrl,
                         Footer = embedFooter,
-                        Url = leaderboard.WebLink.AbsoluteUri
+                        Url = leaderboard.WebLink.AbsoluteUri,
+                        Color = nights ? DiscordColor.Magenta : CharacterColor(leaderboard)
                     };
-                    CharacterColor(leaderboard, records);
-
-                    switch (nights)
-                    {
-                        case true:
-                            records.Color = DiscordColor.Magenta;
-                            break;
-
-                        case false:
-                            records.Title += " | " + leaderboard.Category.Name;
-                            break;
-                    }
-
+                    
                     for (int i = 0; i < leaderboard.Records.Count(); i++)
                     {
                         Record currentRecord = leaderboard.Records[i];
@@ -341,10 +329,8 @@ namespace RoboBot
         }
 
         [Command("records")]
-        public async Task RecordsOnlyLvl(CommandContext ctx, string level)
-        {
-            await Records(ctx, level, "sonic");
-        }
+        public async Task RecordsOnlyLvl(CommandContext ctx, string level) => await Records(ctx, level, "sonic");
+
 
         [Command("fgrecords")]
         public async Task FgRecords(CommandContext ctx, string category, string character, string version)
@@ -394,26 +380,26 @@ namespace RoboBot
                 embedFooter.Text = Program.s.RandomStat();
                 Random r = new Random();
                 int footerImgNum = r.Next(1, 21);
-                embedFooter.IconUrl = $"http://77.68.95.193/footerimgs/{footerImgNum}.png";
+                embedFooter.IconUrl = $"https://roborecords.org/footerimgs/{footerImgNum}.png";
                 var records = new DiscordEmbedBuilder
                 {
                     Title = $"{goal} | ",
                     Thumbnail = thumbnailUrl,
                     Footer = embedFooter,
-                    Url = leaderboard.WebLink.AbsoluteUri
+                    Url = leaderboard.WebLink.AbsoluteUri,
+                    Color = CharacterColor(leaderboard),
                 };
-                CharacterColor(leaderboard, records);
                 if (categoryFgID == "9d8pmg3k" || categoryFgID == "9d8pm0qk")
                 {
                     string formattedCat = leaderboard.Category.Name.Replace(" ", string.Empty);
-                    string url = $"http://77.68.95.193/fgicons/{formattedCat}.png";
+                    string url = $"https://roborecords.org/fgicons/{formattedCat}.png";
                     thumbnailUrl.Url = url;
                     records.Title += finalVersion;
                 }
                 else
                 {
                     string formattedGoal = goal.Replace(" ", string.Empty).Replace("%", string.Empty);
-                    string url = $"http://77.68.95.193/fgicons/{formattedGoal}.png";
+                    string url = $"https://roborecords.org/fgicons/{formattedGoal}.png";
                     thumbnailUrl.Url = url;
                     records.Title += leaderboard.Category.Name + " | " + finalVersion;
                 }
@@ -453,65 +439,60 @@ namespace RoboBot
         }
 
         [Command("fgrecords")]
-        public async Task FGRecordsNoVersion(CommandContext ctx, string category, string character)
-        {
-            await FgRecords(ctx, category, character, "");
-        }
+        public async Task FGRecordsNoVersion(CommandContext ctx, string category, string character) => await FgRecords(ctx, category, character, "");
+        
 
         [Command("fgrecords")]
-        public async Task FGRecordsNoVersionNoCharacter(CommandContext ctx, string category)
-        {
-            await FgRecords(ctx, category, "", "");
-        }
+        public async Task FGRecordsNoVersionNoCharacter(CommandContext ctx, string category) => await FgRecords(ctx, category, "", "");
+        
 
         [Command("fgrecords")]
-        public async Task Recordsoof2(CommandContext ctx)
-        {
-            await ctx.RespondAsync("No parameters given\nType !help for more info");
-        }
+        public async Task FGRecordsNoParams(CommandContext ctx) => await ctx.RespondAsync("No parameters given\nType !help for more info");
+        
 
         [Command("records")]
-        public async Task Recordsoof(CommandContext ctx)
-        {
-            await ctx.RespondAsync("No parameters given\nType !help for more info");
-        }
+        public async Task ILRecordsNoParams(CommandContext ctx) => await ctx.RespondAsync("No parameters given\nType !help for more info");
+        
 
-        private static void CharacterColor(Leaderboard leaderboard, DiscordEmbedBuilder records)
+        private static DiscordColor CharacterColor(Leaderboard leaderboard)
         {
+            var charColor = DiscordColor.Black;
             switch (leaderboard.Category.Name)
             {
                 case "Sonic":
-                    records.Color = DiscordColor.Blue;
+                    charColor = DiscordColor.Blue;
                     break;
 
                 case "Tails":
-                    records.Color = DiscordColor.Orange;
+                    charColor = DiscordColor.Orange;
                     break;
 
                 case "Knuckles":
-                    records.Color = DiscordColor.Red;
+                    charColor = DiscordColor.Red;
                     break;
 
                 case "Amy":
-                    records.Color = DiscordColor.HotPink;
+                    charColor = DiscordColor.HotPink;
                     break;
 
                 case "Fang":
-                    records.Color = DiscordColor.Purple;
+                    charColor = DiscordColor.Purple;
                     break;
 
                 case "Metal Sonic":
-                    records.Color = DiscordColor.DarkBlue;
+                    charColor = DiscordColor.DarkBlue;
                     break;
 
                 case "All Emblems":
-                    records.Color = DiscordColor.Goldenrod;
+                    charColor = DiscordColor.Goldenrod;
                     break;
 
                 case "SRB1 Remake":
-                    records.Color = DiscordColor.CornflowerBlue;
+                    charColor = DiscordColor.CornflowerBlue;
                     break;
             }
+
+            return charColor;
         }
 
         private static FtpClient PiFTP()
