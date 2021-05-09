@@ -2,6 +2,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using FluentFTP;
+
 using RoboBot_SRB2;
 using SpeedrunComSharp;
 using System;
@@ -27,6 +28,7 @@ namespace RoboBot
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
 
+        
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {

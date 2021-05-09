@@ -5,6 +5,7 @@ using SpeedrunComSharp;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using ffmpeg = Xabe.FFmpeg;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -81,6 +82,7 @@ namespace RoboBot
                     {
                         string filePath = $"/var/www/html/finishedgifs/";
                         string imageCode = Path.GetRandomFileName();
+                        string testPath = $"{filePath}{imageCode}.gif";
                         File.Move("/var/www/html/gifs/torename.gif", $"{filePath}{imageCode}.gif");
                         var msg = new DiscordMessageBuilder()
                             .WithContent($"https://roborecords.org/finishedgifs/{imageCode}.gif")
