@@ -84,11 +84,17 @@ namespace RoboBot
         }
 
         [Command("reptogif")]
-        public async Task ReplayToGifNoAddons(CommandContext ctx) => await ReplayToGifWithAddons(ctx, null);
-        
+        public async Task ReplayToGifNoAddons(CommandContext ctx) => await ReplayConverterWithAddons(ctx, null);
 
+
+        [Command("reptomp4")]
+        public async Task ReplayToMp4NoAddons(CommandContext ctx) => await ReplayConverterWithAddons(ctx, null);
+        
+        [Command("reptomp4")]
+        public async Task ReplayToMp4WithAddons(CommandContext ctx, params string[] addons) => await ReplayConverterWithAddons(ctx, addons);
+        
         [Command("reptogif")]
-        public async Task ReplayToGifWithAddons(CommandContext ctx, params string[] addons)
+        public async Task ReplayConverterWithAddons(CommandContext ctx, params string[] addons)
         {
             try
             {
