@@ -4,9 +4,9 @@ using System.Text;
 
 namespace RoboBot
 {
-    internal class JobInfo
+    public class JobInfo
     {
-        private class BadJobException<T> : Exception
+        public class BadJobException<T> : Exception
         {
             public override string Message { get; }
             public T Property { get; }
