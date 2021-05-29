@@ -138,6 +138,10 @@ namespace RoboBot
                             await ctx.RespondAsync("The demo was not played in 2.1 or 2.2");
                             return;
                         }
+
+                        var log = ReplayWorker.ProcessReplay(addonsJobInfo, replay.FullName, "/var/www/html/gifs");
+                        await ctx.RespondAsync("ReplayStatus = " + log.Item1);
+                        await ctx.RespondAsync("Replay path = " +  log.Item2);
                         string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Nickname}";
                         if (addons != null)
                         {
@@ -151,10 +155,7 @@ namespace RoboBot
                             }
                             confirmationMessage += " with addon(s) " + string.Join(" ", addons);
                         }
-                        
-
-                        File.Move(replay.Name,"/root/.srb2/replaystogif");
-
+                        File.Move(replay.Name,$"/root/.srb2/replaystogif/{replay.Name}");
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 
                         {

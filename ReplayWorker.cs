@@ -30,7 +30,7 @@ namespace RoboBot
         public static string DataFolder = DataFolder22;
 
         public readonly static string LogFilePath22 = Path.Combine(DataFolder, "latest-log.txt");
-        public readonly static string LogFilePath21 = Path.Combine(DataFolder21, "latest-log.txt");
+        public readonly static string LogFilePath21 = Path.Combine(DataFolder21, "log.txt");
         public static string LogFilePath = LogFilePath22;
 
         public static string[] CurrentGifFiles;
@@ -76,8 +76,9 @@ namespace RoboBot
                         addons += System.Text.Encoding.ASCII.GetString(addonfname) + " ";
                 }
 
-                GameProcess.StartInfo.Arguments = "-playdemo " + "/replay/downloaded.lmp " + addons;
-                GameProcess.StartInfo.FileName = Path.Combine(ExecutableFolder, "reptovid");
+                GameProcess.StartInfo.Arguments = "./reptovid" + " -home /root" + " -playdemo " + "replay/downloaded.lmp " + addons + "-- :1";
+                //GameProcess.StartInfo.FileName = Path.Combine(ExecutableFolder, "reptovid");
+                GameProcess.StartInfo.FileName = "xinit";
                 GameProcess.StartInfo.WorkingDirectory = ExecutableFolder;
                 GameProcess.Start();
 
