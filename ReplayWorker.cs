@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.IO;
 using System.Linq;
-using SpeedrunComSharp;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace RoboBot
 {
@@ -15,32 +17,87 @@ namespace RoboBot
         NoMap,
         UnhandledException
     }
-    
+
+    public class ReplayEventArgs : EventArgs
+    {
+        public ReplayStatus Status { get; }
+        public string OutputPath { get; }
+
+        public ReplayEventArgs(ReplayStatus status, string outputPath)
+        {
+            Status = status;
+            OutputPath = outputPath;
+        }
+    }
+
     public class ReplayWorker
     {
-        private static Process GameProcess = new Process();
+        private Process GameProcess = new Process();
 
-        public readonly static string HomeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        public static readonly string HomeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-        public readonly static string ExecutableFolder22 = Path.Combine(HomeDir, "SRB2");
-        public readonly static string ExecutableFolder21 = Path.Combine(HomeDir, "SRB21");
+        public static readonly string ExecutableFolder22 = Path.Combine(HomeDir, "SRB2");
+        public static readonly string ExecutableFolder21 = Path.Combine(HomeDir, "SRB21");
         public static string ExecutableFolder = ExecutableFolder22;
 
-        public readonly static string DataFolder22 = Path.Combine(HomeDir, ".srb2");
-        public readonly static string DataFolder21 = Path.Combine(HomeDir, ".srb2", ".srb21");
+        public static readonly string DataFolder22 = Path.Combine(HomeDir, ".srb2");
+        public static readonly string DataFolder21 = Path.Combine(HomeDir, ".srb2", ".srb21");
         public static string DataFolder = DataFolder22;
 
-        public readonly static string LogFilePath22 = Path.Combine(DataFolder, "latest-log.txt");
-        public readonly static string LogFilePath21 = Path.Combine(DataFolder21, "log.txt");
-        public static string LogFilePath = LogFilePath22;
+        public static readonly string LogFilePath22 = Path.Combine(DataFolder, "latest-log.txt");
+        public static readonly string LogFilePath21 = Path.Combine(DataFolder21, "log.txt");
+        public string LogFilePath = LogFilePath22;
 
-        public static string[] CurrentGifFiles;
-        public static string[] PreviousGifFiles;
-        public static DirectoryInfo GifDir = new DirectoryInfo(Path.Combine(DataFolder22, "movies"));
+        public string[] CurrentGifFiles;
+        public string[] PreviousGifFiles;
+        public DirectoryInfo GifDir = new DirectoryInfo(Path.Combine(DataFolder22, "movies"));
 
-        public const int JobInfoLength = 202;
+        public delegate void ReplayEventHandler(object sender, ReplayEventArgs args);
         
-        private static Tuple<ReplayStatus, string> RecordReplay(JobInfo replayInfo, string replayPath, string outputPath)
+        public event ReplayEventHandler Processed;
+
+        private List<Tuple<JobInfo, string, string>> queue;
+        private bool isStarted;
+
+        public void StartProcessing()
+        {
+            queue = new List<Tuple<JobInfo, string, string>>();
+            Task replayProcessingTask = new Task(ReplayProcesssingLoop);
+            replayProcessingTask.Start();
+        }
+
+        public void StopProcessing()
+        {
+            isStarted = false;
+        }
+
+        public void AddToQueue(JobInfo jobInfo, string replayPath, string outputPath)
+        {
+            queue.Add(Tuple.Create(jobInfo, replayPath, outputPath));
+        }
+
+        private async void ReplayProcesssingLoop()
+        {
+            while (isStarted)
+            {
+                if (queue.Count != 0)
+                {
+                    Tuple<JobInfo, string, string> queueElement = queue.First();
+                    try
+                    {
+                        ProcessReplay(queueElement.Item1, queueElement.Item2, queueElement.Item3);
+                    }
+                    finally
+                    {
+                        queue.Remove(queueElement);
+                    }
+                }
+                
+                await Task.Delay(1000);
+            }
+        }
+
+        private void RecordReplay(JobInfo replayInfo, string replayPath, string outputPath)
         {
             FileInfo[] gifInfos = GifDir.GetFiles().OrderBy(file => file.LastWriteTime).ToArray();
             PreviousGifFiles = new string[gifInfos.Length];
@@ -108,17 +165,17 @@ namespace RoboBot
                 {
                     string gifPath = gifInfos.Last().FullName;
                     
-                    return GetReturnValueAndCleanup(ReplayStatus.Success, replayPath, gifPath, outputPath);
+                    InvokeEventAndCleanup(ReplayStatus.Success, replayPath, gifPath, outputPath);
                 }
                 else
                 {
                     if(nomap)
                     {
-                        return GetReturnValueAndCleanup(ReplayStatus.NoMap, replayPath);
+                        InvokeEventAndCleanup(ReplayStatus.NoMap, replayPath);
                     }
                     else
                     {
-                        return GetReturnValueAndCleanup(ReplayStatus.BadDemo, replayPath);
+                        InvokeEventAndCleanup(ReplayStatus.BadDemo, replayPath);
                     }
                 }
             }
@@ -126,36 +183,34 @@ namespace RoboBot
             {
                 Console.WriteLine(e.Message);
                 
-                return GetReturnValueAndCleanup(ReplayStatus.UnhandledException, replayPath);
+                InvokeEventAndCleanup(ReplayStatus.UnhandledException, replayPath);
             }
         }
 
-        public static Tuple<ReplayStatus, string> ProcessReplay(JobInfo jobInfo, string replayPath, string outputPath)
+        private void ProcessReplay(JobInfo jobInfo, string replayPath, string outputPath)
         {
             FileInfo finfo = new FileInfo(replayPath);
             if (finfo.Extension.ToLower() == ".lmp")
             {
-                return RecordReplay(jobInfo, replayPath, outputPath);
+                RecordReplay(jobInfo, replayPath, outputPath);
             }
             else
             {
-                return GetReturnValueAndCleanup(ReplayStatus.BadDemo, replayPath);
+                InvokeEventAndCleanup(ReplayStatus.BadDemo, replayPath);
             }
         }
 
-        
-        private static Tuple<ReplayStatus, string> GetReturnValueAndCleanup(ReplayStatus status, string replayPath = "", string gifPath = "", string outputPath = "")
+        private void InvokeEventAndCleanup(ReplayStatus status, string replayPath = "", string gifPath = "", string outputPath = "")
         {
             if (!String.IsNullOrEmpty(replayPath) && File.Exists(replayPath))
-            {
                 File.Delete(replayPath);
-            }
             if (!String.IsNullOrEmpty(gifPath) && File.Exists(gifPath))
             {
                 File.Move(gifPath, outputPath, true);
                 File.Delete(gifPath);
             }
-            return Tuple.Create(status, outputPath);
+
+            Processed?.Invoke(this, new ReplayEventArgs(status, outputPath));
         }
     }
 }

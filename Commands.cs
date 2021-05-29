@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using FFMpegCore;
 
 namespace RoboBot
 {
@@ -19,6 +20,12 @@ namespace RoboBot
         public ParsingException(string? message) : base(message)
         {
         }
+    }
+    
+    public class MediaPaths
+    {
+        public string filePath = "/var/www/html/";
+        public string urlPath = "https://roborecords.org/";
     }
 
     public class Commands : BaseCommandModule
@@ -139,9 +146,7 @@ namespace RoboBot
                             return;
                         }
                         File.Move(replay.Name,$"/root/.srb2/replaystogif/{replay.Name}");
-                        var log = ReplayWorker.ProcessReplay(addonsJobInfo, $"/root/.srb2/replaystogif/{replay.Name}", "/var/www/html/gifs/test1234.gif");
-                        await ctx.RespondAsync("ReplayStatus = " + log.Item1);
-                        await ctx.RespondAsync("Replay path = " +  log.Item2);
+                       
                         string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Username}";
                         if (addons != null)
                         {
@@ -155,13 +160,16 @@ namespace RoboBot
                             }
                             confirmationMessage += " with addon(s) " + string.Join(" ", addons);
                         }
-                        
+                       
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 
                         {
                             await ctx.RespondAsync(confirmationMessage);
                             Program.convertQueue.Add(ctx);
                         }
+                        
+                        var log = ReplayWorker.ProcessReplay(addonsJobInfo, $"/root/.srb2/replaystogif/{replay.Name}", "/var/www/html/gifs/torename.gif");
+                        FinalizeReplay(log);
                     }
                     catch (Exception e)
                     {
@@ -185,6 +193,54 @@ namespace RoboBot
             }
         }
 
+        private static void FinalizeReplay(Tuple<ReplayStatus, string> log)
+        {
+            MediaPaths outputPaths = new MediaPaths();
+            string imageCode = Path.GetRandomFileName();
+            switch (Program.convertQueue[0].Command.Name)
+            {
+                case "reptogif":
+                    outputPaths.filePath += "finishedgifs/";
+                    outputPaths.urlPath += $"finishedgifs/{imageCode}.gif";
+                    File.Move(log.Item2, $"{outputPaths.filePath}{imageCode}.gif");
+                    break;
+                case "reptomp4":
+                    outputPaths.filePath += "finishedmp4s/";
+                    outputPaths.urlPath += $"finishedmp4s/{imageCode}.mp4";
+                    File.Move(log.Item2, $"/var/www/html/gifs/{imageCode}.gif");
+                    ConvertToMp4($"{outputPaths.filePath}{imageCode}.mp4", imageCode);
+                    File.Delete($"/var/www/html/gifs/{imageCode}.gif");
+                    break;
+            }
+
+            var finishedmedia = new DiscordMessageBuilder()
+                .WithContent(outputPaths.urlPath)
+                .WithReply(Program.convertQueue[0].Message.Id, true)
+                .SendAsync(Program.convertQueue[0].Channel);
+
+            Program.convertQueue.RemoveAt(0);
+            if (Program.convertQueue.Any())
+            {
+                var nextQueue = new DiscordMessageBuilder()
+                    .WithContent("This replay is next.")
+                    .WithReply(Program.convertQueue[0].Message.Id)
+                    .SendAsync(Program.convertQueue[0].Channel);
+            }
+        }
+
+        private static void ConvertToMp4(string output, string imageCode)
+        {
+            FFMpegArguments
+                .FromFileInput($"/var/www/html/gifs/{imageCode}.gif")
+                .OutputToFile(output, true, options => options
+                    .UsingMultithreading(true)
+                    .WithVideoCodec("h264")
+                    .WithFastStart()
+                    .ForcePixelFormat("yuv420p")
+                    .ForceFormat("mp4"))
+                .ProcessSynchronously();
+                
+        }
         [Command("help")]
         public async Task Help(CommandContext ctx) =>  await HelpSheet(ctx, " ");
 

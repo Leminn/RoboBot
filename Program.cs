@@ -14,15 +14,9 @@ using System.Threading.Tasks;
 
 namespace RoboBot
 {
-    public class Paths
-    {
-        public string filePath = "/var/www/html/";
-        public string urlPath = "https://roborecords.org/";
-    }
+
     internal class Program
     {
-
-        public static FileSystemWatcher txtWatcher = new FileSystemWatcher("/var/www/html/gifs/");
         public static string timeFormat = @"ss\.ff";
         public static string timeFormatWithMinutes = @"mm\:ss\.ff";
         public static string timeFormatWithHours = @"hh\:mm\:ss\.ff";
@@ -48,11 +42,7 @@ namespace RoboBot
 
         private static async Task MainAsync(string[] args)
         {
-            txtWatcher.EnableRaisingEvents = true;
-            txtWatcher.Filters.Add("status.txt");
-            txtWatcher.Created += OnCreated;
-            txtWatcher.Changed += OnCreated;
-            
+
             discord = new DiscordClient(new DiscordConfiguration
             {
                 Token = ConfigurationManager.AppSettings["APIKey"],
@@ -71,72 +61,6 @@ namespace RoboBot
 
             await discord.ConnectAsync(activity);
             await Task.Delay(-1);
-        }
-
-        private static void OnCreated(object sender, FileSystemEventArgs e)
-        {
-            FileInfo filestuff = new FileInfo(e.FullPath);
-            switch (filestuff.Extension)
-            {
-                case ".txt":
-                    string txtContents = File.ReadAllText(e.FullPath);
-                    if (txtContents != "ok")
-                    {
-                        var msg = new DiscordMessageBuilder()
-                            .WithContent(txtContents)
-                            .WithReply(convertQueue[0].Message.Id)
-                            .SendAsync(convertQueue[0].Channel);
-                    }
-                    else
-                    {
-                        string imageCode = Path.GetRandomFileName();
-                        Paths outputPaths = new Paths();
-                        switch (convertQueue[0].Command.Name)
-                        {
-                            case "reptogif":
-                                outputPaths.filePath += "finishedgifs/";
-                                outputPaths.urlPath += $"finishedgifs/{imageCode}.gif";
-                                File.Move("/var/www/html/gifs/torename.gif", $"{outputPaths.filePath}{imageCode}.gif");
-                                break;
-                            case "reptomp4":
-                                outputPaths.filePath += "finishedmp4s/";
-                                outputPaths.urlPath += $"finishedmp4s/{imageCode}.mp4";
-                                File.Move("/var/www/html/gifs/torename.gif",$"/var/www/html/gifs/{imageCode}.gif");
-                                ConvertToMp4($"{outputPaths.filePath}{imageCode}.mp4",imageCode);
-                                File.Delete($"/var/www/html/gifs/{imageCode}.gif");
-                                break;
-                        }
-                        
-                        var msg = new DiscordMessageBuilder()
-                            .WithContent(outputPaths.urlPath)
-                            .WithReply(convertQueue[0].Message.Id, true)
-                            .SendAsync(convertQueue[0].Channel);
-                    }
-                    convertQueue.RemoveAt(0);
-                    if (convertQueue.Any())
-                    {
-                        var msg = new DiscordMessageBuilder()
-                            .WithContent("This replay is next.")
-                            .WithReply(convertQueue[0].Message.Id)
-                            .SendAsync(convertQueue[0].Channel);
-                    }
-                    File.Delete(e.FullPath);
-                    break;
-            }
-        }
-
-        private static void ConvertToMp4(string output, string imageCode)
-        {
-            FFMpegArguments
-                .FromFileInput($"/var/www/html/gifs/{imageCode}.gif")
-                .OutputToFile(output, true, options => options
-                    .UsingMultithreading(true)
-                    .WithVideoCodec("h264")
-                    .WithFastStart()
-                    .ForcePixelFormat("yuv420p")
-                    .ForceFormat("mp4"))
-                .ProcessSynchronously();
-                
         }
     }
 }
