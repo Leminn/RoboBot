@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Linq;
+using SpeedrunComSharp;
 
 namespace RoboBot
 {
@@ -39,7 +40,7 @@ namespace RoboBot
 
         public const int JobInfoLength = 202;
         
-        private static Tuple<ReplayStatus, string> RecordReplay(JobInfo replayInfo, string replayPath)
+        private static Tuple<ReplayStatus, string> RecordReplay(JobInfo replayInfo, string replayPath, string outputPath)
         {
             FileInfo[] gifInfos = GifDir.GetFiles().OrderBy(file => file.LastWriteTime).ToArray();
             PreviousGifFiles = new string[gifInfos.Length];
@@ -77,9 +78,9 @@ namespace RoboBot
                 }
 
                 GameProcess.StartInfo.Arguments = "./reptovid" + " -home /root" + " -playdemo " + "replay/downloaded.lmp " + addons + "-- :1";
-                //GameProcess.StartInfo.FileName = Path.Combine(ExecutableFolder, "reptovid");
                 GameProcess.StartInfo.FileName = "xinit";
                 GameProcess.StartInfo.WorkingDirectory = ExecutableFolder;
+                
                 GameProcess.Start();
 
                 bool nomap = false;
@@ -107,7 +108,7 @@ namespace RoboBot
                 {
                     string gifPath = gifInfos.Last().FullName;
                     
-                    return GetReturnValueAndCleanup(ReplayStatus.Success, replayPath, gifPath);
+                    return GetReturnValueAndCleanup(ReplayStatus.Success, replayPath, gifPath, outputPath);
                 }
                 else
                 {
@@ -129,12 +130,12 @@ namespace RoboBot
             }
         }
 
-        public static Tuple<ReplayStatus, string> ProcessReplay(JobInfo jobInfo, string replayPath, string outputDir)
+        public static Tuple<ReplayStatus, string> ProcessReplay(JobInfo jobInfo, string replayPath, string outputPath)
         {
             FileInfo finfo = new FileInfo(replayPath);
             if (finfo.Extension.ToLower() == ".lmp")
             {
-                return RecordReplay(jobInfo, replayPath);
+                return RecordReplay(jobInfo, replayPath, outputPath);
             }
             else
             {
@@ -142,13 +143,18 @@ namespace RoboBot
             }
         }
 
+        
         private static Tuple<ReplayStatus, string> GetReturnValueAndCleanup(ReplayStatus status, string replayPath = "", string gifPath = "", string outputPath = "")
         {
-            if(String.IsNullOrEmpty(replayPath) && File.Exists(replayPath))
+            if (!String.IsNullOrEmpty(replayPath) && File.Exists(replayPath))
+            {
                 File.Delete(replayPath);
-            /*if(String.IsNullOrEmpty(gifPath) && File.Exists(gifPath))
-                File.Delete(gifPath);*/
-            
+            }
+            if (!String.IsNullOrEmpty(gifPath) && File.Exists(gifPath))
+            {
+                File.Move(gifPath, outputPath, true);
+                File.Delete(gifPath);
+            }
             return Tuple.Create(status, outputPath);
         }
     }
