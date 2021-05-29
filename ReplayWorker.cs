@@ -61,6 +61,7 @@ namespace RoboBot
 
         public void StartProcessing()
         {
+            isStarted = true;
             queue = new List<Tuple<JobInfo, string, string>>();
             Task replayProcessingTask = new Task(ReplayProcesssingLoop);
             replayProcessingTask.Start();
@@ -134,7 +135,7 @@ namespace RoboBot
                         addons += System.Text.Encoding.ASCII.GetString(addonfname) + " ";
                 }
 
-                GameProcess.StartInfo.Arguments = "./reptovid" + " -home /root" + " -playdemo " + "replay/downloaded.lmp " + addons + "-- :1";
+                GameProcess.StartInfo.Arguments = "./reptovid -home /root -playdemo replay/downloaded.lmp  " + addons + "-- :1";
                 GameProcess.StartInfo.FileName = "xinit";
                 GameProcess.StartInfo.WorkingDirectory = ExecutableFolder;
                 

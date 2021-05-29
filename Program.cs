@@ -27,7 +27,8 @@ namespace RoboBot
         public static List<CommandContext> convertQueue = new List<CommandContext>();
         
         public static Game srb2Game;
-        
+
+        public static ReplayWorker replayEvents = new ReplayWorker();
         
         public static SpeedrunComClient srcClient = new SpeedrunComClient(maxCacheElements: 0) { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
 
@@ -35,11 +36,89 @@ namespace RoboBot
 
         private static void Main(string[] args)
         {
+            replayEvents.StartProcessing();
+            replayEvents.Processed += ReplayProcessed;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
             srb2Game = srcClient.Games.GetGame(gameId);
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
+        private static void ReplayProcessed(object sender, ReplayEventArgs args)
+        {
+
+            switch (args.Status)
+            {
+                case ReplayStatus.BadDemo:
+                    SendMessage("Bad Demo. Is your file a valid replay?");
+                    return;
+                case ReplayStatus.NoMap:
+                    SendMessage("No map found. Did you forget to put the addon name?");
+                    return;
+                case ReplayStatus.UnhandledException:
+                    SendMessage("i am stupid");
+                    return;
+                case ReplayStatus.Success:
+                    Console.WriteLine("success");
+                    break;
+            }
+            MediaPaths outputPaths = new MediaPaths();
+                string imageCode = Path.GetRandomFileName();
+                switch (convertQueue[0].Command.Name)
+                {
+                    case "reptogif":
+                        outputPaths.filePath += "finishedgifs/";
+                        outputPaths.urlPath += $"finishedgifs/{imageCode}.gif";
+                        File.Move(args.OutputPath, $"{outputPaths.filePath}{imageCode}.gif");
+                        break;
+                    case "reptomp4":
+                        outputPaths.filePath += "finishedmp4s/";
+                        outputPaths.urlPath += $"finishedmp4s/{imageCode}.mp4";
+                        File.Move(args.OutputPath, $"/var/www/html/gifs/{imageCode}.gif");
+                        ConvertToMp4($"{outputPaths.filePath}{imageCode}.mp4", imageCode);
+                        File.Delete($"/var/www/html/gifs/{imageCode}.gif");
+                        break;
+                }
+
+                var finishedmedia = new DiscordMessageBuilder()
+                    .WithContent(outputPaths.urlPath)
+                    .WithReply(convertQueue[0].Message.Id, true)
+                    .SendAsync(convertQueue[0].Channel);
+
+                convertQueue.RemoveAt(0);
+                if (convertQueue.Any())
+                {
+                    var nextQueue = new DiscordMessageBuilder()
+                        .WithContent("This replay is next.")
+                        .WithReply(convertQueue[0].Message.Id)
+                        .SendAsync(convertQueue[0].Channel);
+                }
+            
+        }
+
+        private static void SendMessage(string errorMessage)
+        {
+            new DiscordMessageBuilder()
+                .WithContent(errorMessage)
+                .WithReply(convertQueue[0].Message.Id)
+                .SendAsync(convertQueue[0].Channel);
+            
+            convertQueue.RemoveAt(0);
+        }
+
+        private static void ConvertToMp4(string output, string imageCode)
+        {
+            FFMpegArguments
+                .FromFileInput($"/var/www/html/gifs/{imageCode}.gif")
+                .OutputToFile(output, true, options => options
+                    .UsingMultithreading(true)
+                    .WithVideoCodec("h264")
+                    .WithFastStart()
+                    .ForcePixelFormat("yuv420p")
+                    .ForceFormat("mp4"))
+                .ProcessSynchronously();
+                
+        }
+        
         private static async Task MainAsync(string[] args)
         {
 
