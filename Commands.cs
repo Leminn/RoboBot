@@ -132,7 +132,7 @@ namespace RoboBot
                         string version = "";
                         if (fileBytes[12] == 201) 
                         {
-                            addonPath = $"/root/.srb21/addons/";
+                            addonPath = $"/root/.srb2/.srb21/addons/";
                             version = "2.1";
                         }
                         else if (fileBytes[12] == 202) 
