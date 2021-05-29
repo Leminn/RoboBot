@@ -32,8 +32,10 @@ namespace RoboBot
         {
             
             
-            string[] addons21 = Directory.GetFiles("/root/addons21/");
-            string[] addons22 = Directory.GetFiles("/root/addons22/");
+            string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
+                                .Select(Path.GetFileName).ToArray();
+            string[] addons22 = Directory.GetFiles("/root/.srb2/addons")
+                                .Select(Path.GetFileName).ToArray();
             var addonList = new DiscordEmbedBuilder
             {
                 Title = "Addons for Replay2Gif",
@@ -98,13 +100,8 @@ namespace RoboBot
             {
                 await ctx.TriggerTypingAsync();
                 JobInfo addonsJobInfo = addons != null ? JobInfo.CreateFromStrings((byte)addons.Length, addons) : JobInfo.NoAddons;
-                byte[] addonsBytes = addonsJobInfo.ToBytes();
-
                 currentChannel = ctx.Channel;
-
-                FtpClient client = PiFTP();
-
-                client.Connect();
+                
 
                 if (ctx.Message.Attachments.Count != 0)
                 {
@@ -113,6 +110,7 @@ namespace RoboBot
                         await ctx.RespondAsync("File is too big.");
                         return;
                     }
+                    
                     using (WebClient wwwClient = new WebClient())
                     {
                         wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
@@ -122,17 +120,17 @@ namespace RoboBot
                     {
                         
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
-                        byte[] fileBytes = File.ReadAllBytes(replay.FullName).Concat(addonsBytes).ToArray();
+                        byte[] fileBytes = File.ReadAllBytes(replay.FullName).ToArray();
                         string addonPath = "";
                         string version = "";
                         if (fileBytes[12] == 201) 
                         {
-                            addonPath = $"/.srb21/addons/";
+                            addonPath = $"/root/.srb21/addons/";
                             version = "2.1";
                         }
                         else if (fileBytes[12] == 202) 
                         {
-                            addonPath = $"/addons/";
+                            addonPath = $"/root/.srb2/addons";
                             version = "2.2";
                         }
                         else
@@ -140,12 +138,12 @@ namespace RoboBot
                             await ctx.RespondAsync("The demo was not played in 2.1 or 2.2");
                             return;
                         }
-                        string confirmationMessage = $"Processing {version} replay";
+                        string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Nickname}";
                         if (addons != null)
                         {
                             for (int i = 0; i < addons.Length; i++)
                             {
-                                if (!client.FileExists($"{addonPath}/{addons[i]}"))
+                                if (!File.Exists($"{addonPath}/{addons[i]}"))
                                 {
                                     await ctx.RespondAsync("Addon does not exist on the server.");
                                     return;
@@ -153,15 +151,9 @@ namespace RoboBot
                             }
                             confirmationMessage += " with addon(s) " + string.Join(" ", addons);
                         }
-                        else
-                        {
+                        
 
-                        }
-
-                        client.Upload(fileBytes, $"/replaystogif/{replay.Name}.part", FtpRemoteExists.Skip);
-                        client.MoveFile($"/replaystogif/{replay.Name}.part", $"/replaystogif/{replay.Name}"); // renames on linux
-                        File.Delete(replay.FullName);
-                        // client.Rename($"/replaystogif/{replay.Name}.part", replay.Name); this bad on linux
+                        File.Move(replay.Name,"/root/.srb2/replaystogif");
 
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
 
@@ -193,10 +185,7 @@ namespace RoboBot
         }
 
         [Command("help")]
-        public async Task Help(CommandContext ctx)
-        {
-            await HelpSheet(ctx, " ");
-        }
+        public async Task Help(CommandContext ctx) =>  await HelpSheet(ctx, " ");
 
         [Command("help")]
         public async Task HelpSheet(CommandContext ctx, string command)
@@ -500,16 +489,7 @@ namespace RoboBot
 
             return charColor;
         }
-
-        private static FtpClient PiFTP()
-        {
-            string hostAddress = ConfigurationManager.AppSettings["FTPAddress"];
-            string hostName = ConfigurationManager.AppSettings["FTPName"];
-            string hostPassword = ConfigurationManager.AppSettings["FTPPassword"];
-            FtpClient client = new FtpClient(hostAddress, hostName, hostPassword);
-            return client;
-        }
-
+        
         private static Leaderboard FullGameLeaderboard(string goal, string categoryId, string version, string originalVer)
         {
             Console.WriteLine(string.Join('\n', goal, categoryId, version, originalVer));
