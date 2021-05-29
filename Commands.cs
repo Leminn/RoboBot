@@ -1,8 +1,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using FluentFTP;
-
 using RoboBot_SRB2;
 using SpeedrunComSharp;
 using System;
@@ -32,10 +30,10 @@ namespace RoboBot
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
-            FtpClient client = PiFTP();
-            client.Connect();
-            FtpListItem[] addons21 = client.GetListing("/.srb21/addons/");
-            FtpListItem[] addons22 = client.GetListing("/addons");
+            
+            
+            string[] addons21 = Directory.GetFiles("/root/addons21/");
+            string[] addons22 = Directory.GetFiles("/root/addons22/");
             var addonList = new DiscordEmbedBuilder
             {
                 Title = "Addons for Replay2Gif",
@@ -48,12 +46,12 @@ namespace RoboBot
             await ctx.RespondAsync(embed: addonList);
         }
 
-        private static string MakeModList(FtpListItem[] mods)
+        private static string MakeModList(string[] mods)
         {
             string modList = "";
             foreach (var mod in mods)
             {
-                modList += mod.Name;
+                modList += mod;
                 if (mod != mods.Last()) modList += ", ";
             }
             return modList;

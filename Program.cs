@@ -10,8 +10,6 @@ using FFMpegCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using FFMpegCore.Enums;
-using FFMpegCore.Pipes;
 
 
 namespace RoboBot
