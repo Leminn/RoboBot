@@ -1,5 +1,6 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
+using DSharpPlus.Interactivity;
 using DSharpPlus.Entities;
 using RoboBot_SRB2;
 using SpeedrunComSharp;
@@ -10,7 +11,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
+using DSharpPlus.Interactivity.Extensions;
 using FFMpegCore;
 
 namespace RoboBot
@@ -41,8 +44,10 @@ namespace RoboBot
             
             string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
                                 .Select(Path.GetFileName).ToArray();
+            Array.Sort(addons21);
             string[] addons22 = Directory.GetFiles("/root/.srb2/addons")
                                 .Select(Path.GetFileName).ToArray();
+            Array.Sort(addons22);
             var addonList = new DiscordEmbedBuilder
             {
                 Title = "Addons for Replay2Gif",
@@ -112,7 +117,7 @@ namespace RoboBot
 
                 if (ctx.Message.Attachments.Count != 0)
                 {
-                    if (ctx.Message.Attachments.First().FileSize > 100000)
+                    if (ctx.Message.Attachments.First().FileSize > 300000)
                     {
                         await ctx.RespondAsync("File is too big.");
                         return;
@@ -155,6 +160,7 @@ namespace RoboBot
                                 if (!File.Exists($"{addonPath}/{addons[i]}"))
                                 {
                                     await ctx.RespondAsync("Addon does not exist on the server.");
+                                    File.Delete($"/root/.srb2/replaystogif/{replay.Name}");
                                     return;
                                 }
                             }
@@ -280,7 +286,7 @@ namespace RoboBot
                     throw new ParsingException("Wrong / Missing parameter: Level");
                 }
 
-                if (gotCat == true && gotLvl == true)
+                if (gotCat && gotLvl)
                 {
                     Leaderboard leaderboard;
                     leaderboard = Program.srcClient.Leaderboards.GetLeaderboardForLevel(
@@ -289,7 +295,7 @@ namespace RoboBot
                     categoryID,
                     5
                     );
-
+                    
                     DiscordEmbedBuilder.EmbedThumbnail thumbnailUrl = new DiscordEmbedBuilder.EmbedThumbnail();
                     thumbnailUrl.Url = @"https://roborecords.org/lvlicons/" + srb2Level.FullName.Replace(" ", string.Empty) + ".png";
                     DiscordEmbedBuilder.EmbedFooter embedFooter = new DiscordEmbedBuilder.EmbedFooter();
@@ -459,8 +465,62 @@ namespace RoboBot
 
         [Command("records")]
         public async Task ILRecordsNoParams(CommandContext ctx) => await ctx.RespondAsync("No parameters given\nType !help for more info");
-        
 
+
+        [Command("host")]
+        public async Task HostReplay(CommandContext ctx)
+        {
+            
+            string username = ctx.User.Username;
+            string fileName = ctx.Message.Attachments.First().FileName;
+            
+            if (!Directory.Exists("/var/www/html/replays/" + username))
+            {
+                Directory.CreateDirectory("/var/www/html/replays/" + username);
+            }
+            string[] allReplays = Directory.GetFiles("/var/www/html/replays/" + username);
+            
+            int fileNum = 1;
+            foreach (string replay in allReplays)
+            {
+                
+                if (replay.Contains(fileName.Substring(0,fileName.Length-4)))
+                {
+                    fileNum++;
+                }
+            }
+
+
+            if (ctx.Message.Attachments.Count != 0)
+            {
+                if (ctx.Message.Attachments.First().FileName
+                    .Substring(ctx.Message.Attachments.First().FileName.Length - 3) != "lmp")
+                {
+                    await ctx.RespondAsync("Not a demo file.");
+                    return;
+                }
+                
+                if (ctx.Message.Attachments.First().FileSize > 500000)
+                {
+                    await ctx.RespondAsync("File is too big.");
+                    return;
+                }
+
+                if (fileNum != 1)
+                {
+                    fileName = fileName.Insert(fileName.Length - 4, fileNum.ToString());
+                }
+
+                using (WebClient wwwClient = new WebClient())
+                {
+                    wwwClient.DownloadFile(ctx.Message.Attachments.First().Url,
+                        $"/var/www/html/replays/{username}/{fileName}");
+                }
+            }
+
+            await ctx.RespondAsync($"https://roborecords.org/replays/{username}/{fileName}");
+        }
+        
         private static DiscordColor CharacterColor(Leaderboard leaderboard)
         {
             var charColor = DiscordColor.Black;

@@ -10,6 +10,9 @@ using FFMpegCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 
 
 namespace RoboBot
@@ -126,6 +129,11 @@ namespace RoboBot
             {
                 Token = ConfigurationManager.AppSettings["APIKey"],
                 TokenType = TokenType.Bot
+            });
+            discord.UseInteractivity(new InteractivityConfiguration()
+            {
+                PollBehaviour = PollBehaviour.KeepEmojis,
+                Timeout = TimeSpan.FromSeconds(30)
             });
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
