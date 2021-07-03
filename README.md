@@ -1,6 +1,6 @@
 # RoboBot
 A Discord bot that displays information about Sonic Robo Blast 2 speedrunning records using Speedrun.com API. 
-The bot can also work with a remote device that is running [this program by Refrag](https://github.com/R3FR4G/SRB2-Replay-to-GIF) to convert a replay into a gif.
+The bot can also convert a game replay into a gif or a video.
 
 
 
