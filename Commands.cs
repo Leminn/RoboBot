@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.Interactivity.Extensions;
 using FFMpegCore;
@@ -471,7 +472,7 @@ namespace RoboBot
         public async Task HostReplay(CommandContext ctx)
         {
             
-            string username = ctx.User.Username;
+            string username = Regex.Replace(ctx.User.Username, @"[^0-9a-zA-Z]+", "");
             string fileName = ctx.Message.Attachments.First().FileName;
             
             if (!Directory.Exists("/var/www/html/replays/" + username))
