@@ -10,6 +10,7 @@ using FFMpegCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
@@ -147,7 +148,87 @@ namespace RoboBot
             DiscordActivity activity = new DiscordActivity("greenflower", ActivityType.ListeningTo);
 
             await discord.ConnectAsync(activity);
+            discord.MessageReactionAdded += DiscordOnMessageReactionAdded;
+            discord.MessageReactionRemoved += DiscordOnMessageReactionRemoved;
             await Task.Delay(-1);
+        }
+
+        
+        //HARDCODED STUFF HERE, need to make some sort of setup with commands and such
+        private static Task DiscordOnMessageReactionRemoved(DiscordClient sender, MessageReactionRemoveEventArgs e)
+        {
+            return Task.Run(() =>
+            {
+                DiscordRole sonicRole = e.Guild.GetRole(869342130907258980);
+                DiscordRole tailsRole = e.Guild.GetRole(869342191422685184);
+                DiscordRole knuxRole = e.Guild.GetRole(869342243901808640);
+
+                DiscordEmoji sonicEmoji = DiscordEmoji.FromName(discord, ":pog:");
+                DiscordEmoji tailsEmoji = DiscordEmoji.FromName(discord, ":fox:");
+                DiscordEmoji knuxEmoji = DiscordEmoji.FromName(discord, ":ghost:");
+
+                DiscordMember user = (DiscordMember)e.User;
+                //IReadOnlyDictionary<ulong, DiscordRole> roles = e.Guild.Roles;
+                
+                e.Message.RespondAsync($"User: {user.Username} unreacted {e.Emoji}");
+
+                switch (e.Emoji.GetDiscordName())
+                {
+                    case ":pog:":
+                    {
+                        user.RevokeRoleAsync(sonicRole).Wait();
+                        break;
+                    }
+                    case ":fox:":
+                    {
+                        user.RevokeRoleAsync(tailsRole).Wait();
+                        break;
+                    }
+                    case ":ghost:":
+                    {
+                        user.RevokeRoleAsync(knuxRole).Wait();
+                        break;
+                    }
+                }
+            });
+        }
+
+        private static Task DiscordOnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)
+        {
+            return Task.Run(() =>
+            {
+                DiscordRole sonicRole = e.Guild.GetRole(869342130907258980);
+                DiscordRole tailsRole = e.Guild.GetRole(869342191422685184);
+                DiscordRole knuxRole = e.Guild.GetRole(869342243901808640);
+
+                DiscordEmoji sonicEmoji = DiscordEmoji.FromName(discord, ":pog:");
+                DiscordEmoji tailsEmoji = DiscordEmoji.FromName(discord, ":fox:");
+                DiscordEmoji knuxEmoji = DiscordEmoji.FromName(discord, ":ghost:");
+
+                DiscordMember user = (DiscordMember)e.User;
+                //IReadOnlyDictionary<ulong, DiscordRole> roles = e.Guild.Roles;
+                
+                e.Message.RespondAsync($"User: {user.Username} reacted {e.Emoji}");
+
+                switch (e.Emoji.GetDiscordName())
+                {
+                    case ":pog:":
+                    {
+                        user.GrantRoleAsync(sonicRole).Wait();
+                        break;
+                    }
+                    case ":fox:":
+                    {
+                        user.GrantRoleAsync(tailsRole).Wait();
+                        break;
+                    }
+                    case ":ghost:":
+                    {
+                        user.GrantRoleAsync(knuxRole).Wait();
+                        break;
+                    }
+                }
+            });
         }
     }
 }
