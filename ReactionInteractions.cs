@@ -81,27 +81,32 @@ namespace RoboBot
 
         public void SaveToFile()
         {
-            //TODO: Implement the persistent saving of the reaction messages
-            return;
-            
-            string json = JsonConvert.SerializeObject(ReactionMessages, Formatting.Indented);
+            List<SerializedReactionMessage> listToSerialize = new List<SerializedReactionMessage>();
+
+            foreach (ReactionMessage reactionMessage in ReactionMessages)
+            {
+                listToSerialize.Add(new SerializedReactionMessage(reactionMessage));
+            }
+
+            string json = JsonConvert.SerializeObject(listToSerialize, Formatting.Indented);
             File.WriteAllText(ReactionMessagesLocalPath, json);
         }
         
         public void LoadReactionMessages()
         {
-            //TODO: Implement the persistent loading of the reaction messages
             ReactionMessages = new List<ReactionMessage>();
-            return;
-            
             if (!File.Exists(ReactionMessagesLocalPath))
             {
-                ReactionMessages = new List<ReactionMessage>();
                 return;
             }
             
             string json = File.ReadAllText(ReactionMessagesLocalPath);
-            ReactionMessages = JsonConvert.DeserializeObject<List<ReactionMessage>>(json);
+            List<SerializedReactionMessage> serializedReactionMessages = JsonConvert.DeserializeObject<List<SerializedReactionMessage>>(json);
+
+            foreach (SerializedReactionMessage serializedReactionMessage in serializedReactionMessages)
+            {
+                ReactionMessages.Add(serializedReactionMessage.ToReactionMessage());
+            }
         }
     }
 }
