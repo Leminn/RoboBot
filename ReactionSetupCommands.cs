@@ -40,18 +40,12 @@ namespace RoboBot
                 return;
             }
             
-            if(!ulong.TryParse(urlParts[2], out ulong channelId))
+            if(!ulong.TryParse(urlParts[2], out ulong channelId) || !ulong.TryParse(urlParts[3], out ulong messageId))
             {
                 await ctx.RespondAsync("Bad message link, try again");
                 return;
             }
-            
-            if(!ulong.TryParse(urlParts[3], out ulong messageId))
-            {
-                await ctx.RespondAsync("Bad message link, try again");
-                return;
-            }
-            
+
             DiscordMessage message;
 
             try
