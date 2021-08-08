@@ -132,5 +132,58 @@ namespace RoboBot
 
             IsSettingUpReactionMessage = false;
         }
+        
+        [RequireGuild]
+        [Command("reactlist")]
+        public async Task ListReactionMessages(CommandContext ctx)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
+            StringBuilder sb = new StringBuilder("Reaction Messages :");
+            foreach (ReactionMessage reactionMessage in Program.reactionInteractions.ReactionMessages.Where(x => x.Message.Channel.GuildId == ctx.Channel.GuildId))
+            {
+                sb.Append("\n\n" + reactionMessage.ToString() + '\n');
+            }
+
+            await ctx.RespondAsync(sb.ToString());
+        }
+        
+        [RequireGuild]
+        [Command("reactdelete")]
+        public async Task DeleteReactionMessage(CommandContext ctx, string messageToUse)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+
+            DiscordMessage message = await CommandHelpers.GetMessageFromUrl(ctx, messageToUse);
+
+            if (message is null)
+                return;
+
+            ReactionMessage associatedReactionMessage =
+                Program.reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message));
+            
+            if (associatedReactionMessage == null)
+            {
+                await ctx.RespondAsync("Couldn't find the ReactionMessage associated with this Discord message");
+                return;
+            }
+
+            Program.reactionInteractions.ReactionMessages.Remove(associatedReactionMessage);
+            await ctx.RespondAsync("Succesfully removed the corresponding ReactionMessage");
+            
+            Program.reactionInteractions.SaveToFile();
+        }
+
+        [RequireGuild]
+        [Command("reactdelete")]
+        public async Task DeleteReactionMessage(CommandContext ctx)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+
+            await ctx.RespondAsync("You need to provide the original message id you want to delete");
+        }
     }
 }
