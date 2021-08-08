@@ -151,7 +151,15 @@ namespace RoboBot
                 EnableDefaultHelp = false
             });
 
-            reactionInteractions = new ReactionInteractions(discord);
+            discord.GuildDownloadCompleted += (sender, eventArgs) =>
+            {
+                return Task.Run(() =>
+                {
+                    Console.WriteLine("Initializing ReactionInteractions...");
+                    reactionInteractions = new ReactionInteractions(discord);
+                    Console.WriteLine("ReactionInteractions Initialized!");
+                });
+            };
 
             commands.RegisterCommands<Commands>();
             commands.RegisterCommands<ReactionSetupCommands>();
