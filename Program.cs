@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define NO_SRC
+
+using System;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
@@ -29,23 +31,27 @@ namespace RoboBot
         private static CommandsNextExtension commands;
         
         public static List<CommandContext> convertQueue = new List<CommandContext>();
-        
-        public static Game srb2Game;
 
         public static ReplayWorker replayEvents = new ReplayWorker();
 
         public static ReactionInteractions reactionInteractions;
         
+#if NO_SRC
+        public static SpeedrunComClient srcClient;
+        public static Game srb2Game;
+        public static Stats s;
+#else
         public static SpeedrunComClient srcClient = new SpeedrunComClient(maxCacheElements: 0) { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
-
+        public static Game srb2Game = srcClient.Games.GetGame(gameId);
         public static Stats s = new Stats(ref srcClient);
+#endif
+
 
         private static void Main(string[] args)
         {
             replayEvents.StartProcessing();
             replayEvents.Processed += ReplayProcessed;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-            srb2Game = srcClient.Games.GetGame(gameId);
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
