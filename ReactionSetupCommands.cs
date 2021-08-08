@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
@@ -13,58 +15,29 @@ namespace RoboBot
     {
         private bool IsSettingUpReactionMessage = false;
 
-        private ReactionInteractions _reactionInteractions = Program.reactionInteractions;
-        
-        public ReactionMessage reactionMessage = new ReactionMessage();
-        
+        private ReactionMessage reactionMessage = new ReactionMessage();
+
+        private const Permissions RequiredPermissions = Permissions.Administrator;
+
+        [RequireGuild]
         [Command("reactsetup")]
-        public async Task ReactionMessageSetup(CommandContext ctx, string messageToUse)
+        public async Task ReactionMessageSetup(CommandContext ctx, string messageUrl)
         {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+
             if (IsSettingUpReactionMessage)
             {
                 await ctx.RespondAsync(
                     "The bot is already setting up a reaction message, finish the previous one and try again");
             }
+
+            DiscordMessage message = await CommandHelpers.GetMessageFromUrl(ctx, messageUrl);
             
-            if (!Uri.TryCreate(messageToUse, UriKind.Absolute, out Uri messageUri))
-            {
-                await ctx.RespondAsync("Bad message link, try again");
-                return;
-            }
-            //ulong channelId = messageUri.Segments.First(x => x.)
-            //ctx.Guild.GetChannel()
-            string[] urlParts = messageUri.PathAndQuery.Remove(0, 1).Split('/');
-            if (urlParts.Length != 4)
-            {
-                await ctx.RespondAsync("Bad message link, try again");
-                return;
-            }
-            
-            if(!ulong.TryParse(urlParts[2], out ulong channelId) || !ulong.TryParse(urlParts[3], out ulong messageId))
-            {
-                await ctx.RespondAsync("Bad message link, try again");
-                return;
-            }
-
-            DiscordMessage message;
-
-            try
-            {
-                message = await ctx.Guild.Channels[channelId].GetMessageAsync(messageId);
-            }
-            catch (Exception e)
-            {
-                await ctx.RespondAsync(e.ToString());
-                throw;
-            }
-
             if (message is null)
-            {
-                await ctx.RespondAsync("Could not get the message, make sure it is in the same server and that the bot has access to it");
                 return;
-            }
 
-            if (_reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message)) != null)
+            if (Program.reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message)) != null)
             {
                 await ctx.RespondAsync("This message already got reaction interactions setup");
                 return;
@@ -76,16 +49,24 @@ namespace RoboBot
             
             IsSettingUpReactionMessage = true;
         }
-
+        
+        [RequireGuild]
         [Command("reactsetup")]
-        public async Task ReactionBruh(CommandContext ctx)
+        public async Task ReactionMessageSetup(CommandContext ctx)
         {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
             await ctx.RespondAsync("You need to provide a message id to start the setup");
         }
-
+        
+        [RequireGuild]
         [Command("reactadd")]
         public async Task ReactionAdd(CommandContext ctx, DiscordEmoji emoji, DiscordRole role)
         {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
             if (!IsSettingUpReactionMessage)
             {
                 await ctx.RespondAsync("You need to have entered the setup to add reactions");
@@ -96,28 +77,40 @@ namespace RoboBot
             await ctx.RespondAsync($"Added {emoji} as the role \"{role.Name}\" to {reactionMessage.Message.JumpLink}");
         }
         
+        [RequireGuild]
         [Command("reactadd")]
-        public async Task ReactionAddBruh(CommandContext ctx)
+        public async Task ReactionAdd(CommandContext ctx)
         {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
             await ctx.RespondAsync("You need to provide an emoji and mention the role to attribute it to");
         }
         
+        [RequireGuild]
         [Command("reactadd")]
-        public async Task ReactionAddBruhMoment(CommandContext ctx, params string[] rest)
+        public async Task ReactionAdd(CommandContext ctx, params string[] rest)
         {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
             await ctx.RespondAsync("You need to provide an emoji and mention the role to attribute it to");
         }
-
+        
+        [RequireGuild]
         [Command("reactfinish")]
         public async Task ReactFinish(CommandContext ctx)
         {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
             if (reactionMessage.Rules.Count == 0)
             {
                 await ctx.RespondAsync("You need to add at least 1 reaction and role to finish the setup");
             }
 
-            _reactionInteractions.ReactionMessages.Add(reactionMessage);
-            _reactionInteractions.SaveToFile();
+            Program.reactionInteractions.ReactionMessages.Add(reactionMessage);
+            Program.reactionInteractions.SaveToFile();
 
             string rulesString = "";
             foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in reactionMessage.Rules)
@@ -138,18 +131,6 @@ namespace RoboBot
                 $"Setup finished!\nMessage : {reactionMessage.Message.JumpLink}\nRules :\n{rulesString}");
 
             IsSettingUpReactionMessage = false;
-        }
-
-        [Command("reactlist")]
-        public async Task ListReactionMessages(CommandContext ctx)
-        {
-            //TODO
-        }
-        
-        [Command("reactdelete")]
-        public async Task DeleteReactionMessage(CommandContext ctx)
-        {
-            //TODO
         }
     }
 }
