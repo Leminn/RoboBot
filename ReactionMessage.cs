@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using DSharpPlus;
 using DSharpPlus.Entities;
 using Newtonsoft.Json;
@@ -54,15 +56,40 @@ namespace RoboBot
         
         public ReactionMessage ToReactionMessage()
         {
-            DiscordGuild guild = Program.discord.GetGuildAsync(GuildId).Result;
-            DiscordMessage message = guild.GetChannel(ChannelId)
-                .GetMessageAsync(MessageId).Result;
+            if (!Program.discord.Guilds.TryGetValue(GuildId, out DiscordGuild guild))
+            {
+                Console.WriteLine("Could not get the guild of this message, perhaps the bot have been removed from it? (Skipping ReactionMessage)");
+                return null;
+            }
+
+            if (!guild.Channels.TryGetValue(ChannelId, out DiscordChannel channel))
+            {
+                Console.WriteLine("Could not get the channel of this message, perhaps the bot have not access to it anymore? (Skipping ReactionMessage)");
+                return null;
+            }
+
+            DiscordMessage message;
+            try
+            {
+                message = channel.GetMessageAsync(MessageId).Result;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Could not get the channel of this message, perhaps it has been removed? (Skipping ReactionMessage)");
+                Console.WriteLine(e);
+                return null;
+            }
 
             Dictionary<DiscordEmoji, DiscordRole> reactionRules = new Dictionary<DiscordEmoji, DiscordRole>();
 
             foreach (KeyValuePair<string, ulong> rule in Rules)
             {
-                DiscordEmoji emoji = DiscordEmoji.FromName(Program.discord, rule.Key);
+                if(!DiscordEmoji.TryFromName(Program.discord, rule.Key, out DiscordEmoji emoji))
+                {
+                    message.RespondAsync($"Could not load emoji {rule.Key}. Has it been removed or renamed? (Skipping this rule)");
+                    continue;
+                }
+                
                 DiscordRole role = guild.Roles[rule.Value];
                 reactionRules.Add(emoji, role);
             }
