@@ -157,12 +157,12 @@ namespace RoboBot
                 {
                     Console.WriteLine("Initializing ReactionInteractions...");
                     reactionInteractions = new ReactionInteractions(discord);
+                    commands.RegisterCommands<ReactionSetupCommands>();
                     Console.WriteLine("ReactionInteractions Initialized!");
                 });
             };
 
             commands.RegisterCommands<Commands>();
-            commands.RegisterCommands<ReactionSetupCommands>();
 
             DiscordActivity activity = new DiscordActivity("greenflower", ActivityType.ListeningTo);
 
