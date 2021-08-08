@@ -20,6 +20,19 @@ namespace RoboBot
             Message = message;
             Rules = rules;
         }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder("");
+            sb.Append("\tMessage : " + Message.JumpLink);
+            sb.Append("\n\tRules :\n");
+            foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in Rules)
+            {
+                sb.Append($"\t\t{rule.Key} : {rule.Value.Mention}\n");
+            }
+
+            return sb.ToString();
+        }
     }
 
     public class SerializedReactionMessage
