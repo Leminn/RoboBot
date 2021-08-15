@@ -103,7 +103,7 @@ namespace RoboBot
                     continue;
                 }
                 
-                if(guild.Roles.TryGetValue(rule.Value, out DiscordRole role))
+                if(!guild.Roles.TryGetValue(rule.Value, out DiscordRole role))
                 {
                     message.RespondAsync($"Could not load role ID {rule.Value}. Has it been removed? (Skipping this rule)");
                     continue;
