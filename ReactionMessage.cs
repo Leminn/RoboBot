@@ -37,11 +37,14 @@ namespace RoboBot
 
     public class SerializedReactionMessage
     {
+        [JsonIgnore] private static DiscordClient _client;
         public ulong GuildId { get; }
         public ulong ChannelId { get; }
         public ulong MessageId { get; }
         
         public Dictionary<string, ulong> Rules { get; }
+        
+        public static void SetDiscordClient(DiscordClient client) => _client = client;
 
         public SerializedReactionMessage(ReactionMessage reactionMessage)
         {
@@ -69,7 +72,7 @@ namespace RoboBot
         
         public ReactionMessage ToReactionMessage()
         {
-            if (!Program.discord.Guilds.TryGetValue(GuildId, out DiscordGuild guild))
+            if (!_client.Guilds.TryGetValue(GuildId, out DiscordGuild guild))
             {
                 Console.WriteLine("Could not get the guild of this message, perhaps the bot have been removed from it? (Skipping ReactionMessage)");
                 return null;
@@ -97,7 +100,7 @@ namespace RoboBot
 
             foreach (KeyValuePair<string, ulong> rule in Rules)
             {
-                if(!DiscordEmoji.TryFromName(Program.discord, rule.Key, out DiscordEmoji emoji))
+                if(!DiscordEmoji.TryFromName(_client, rule.Key, out DiscordEmoji emoji))
                 {
                     message.RespondAsync($"Could not load emoji {rule.Key}. Has it been removed or renamed? (Skipping this rule)");
                     continue;

@@ -13,6 +13,8 @@ namespace RoboBot
 {
     public class ReactionSetupCommands : BaseCommandModule
     {
+        private static ReactionInteractions _reactionInteractions;
+        
         private bool IsSettingUpReactionMessage = false;
         private bool IsEditingReactionMessage = false;
 
@@ -21,6 +23,8 @@ namespace RoboBot
 
         private const Permissions RequiredPermissions = Permissions.Administrator;
 
+        public static void SetReactionInteractions(ReactionInteractions reactionInteractions) => _reactionInteractions = reactionInteractions;
+        
         [RequireGuild]
         [Command("reactsetup")]
         public async Task ReactionMessageSetup(CommandContext ctx, string messageUrl)
@@ -40,7 +44,7 @@ namespace RoboBot
             if (message is null)
                 return;
 
-            if (Program.reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message)) != null)
+            if (_reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message)) != null)
             {
                 await ctx.RespondAsync("This message already got reaction interactions setup");
                 return;
@@ -82,7 +86,7 @@ namespace RoboBot
             if (message is null)
                 return;
 
-            ReactionMessage associatedMessage = Program.reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message));
+            ReactionMessage associatedMessage = _reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message));
             
             if (associatedMessage == null)
             {
@@ -187,10 +191,10 @@ namespace RoboBot
             }
 
             if (IsEditingReactionMessage)
-                Program.reactionInteractions.ReactionMessages.Remove(originalOfEditedMessage);
+                _reactionInteractions.ReactionMessages.Remove(originalOfEditedMessage);
 
-            Program.reactionInteractions.ReactionMessages.Add(reactionMessage);
-            Program.reactionInteractions.SaveToFile();
+            _reactionInteractions.ReactionMessages.Add(reactionMessage);
+            _reactionInteractions.SaveToFile();
 
             string rulesString = "";
             foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in reactionMessage.Rules)
@@ -225,7 +229,7 @@ namespace RoboBot
                 return;
             
             StringBuilder sb = new StringBuilder("Reaction Messages :");
-            foreach (ReactionMessage reactionMessage in Program.reactionInteractions.ReactionMessages.Where(x => x.Message.Channel.GuildId == ctx.Channel.GuildId))
+            foreach (ReactionMessage reactionMessage in _reactionInteractions.ReactionMessages.Where(x => x.Message.Channel.GuildId == ctx.Channel.GuildId))
             {
                 sb.Append("\n\n" + reactionMessage.ToString() + '\n');
             }
@@ -246,7 +250,7 @@ namespace RoboBot
                 return;
 
             ReactionMessage associatedReactionMessage =
-                Program.reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message));
+                _reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message));
             
             if (associatedReactionMessage == null)
             {
@@ -254,10 +258,10 @@ namespace RoboBot
                 return;
             }
 
-            Program.reactionInteractions.ReactionMessages.Remove(associatedReactionMessage);
+            _reactionInteractions.ReactionMessages.Remove(associatedReactionMessage);
             await ctx.RespondAsync("Succesfully removed the corresponding ReactionMessage");
             
-            Program.reactionInteractions.SaveToFile();
+            _reactionInteractions.SaveToFile();
             
             foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in associatedReactionMessage.Rules)
             {

@@ -23,11 +23,15 @@ namespace RoboBot
         public ReactionInteractions(DiscordClient client)
         {
             _client = client;
-            _client.MessageReactionAdded += DiscordOnMessageReactionAdded;
-            _client.MessageReactionRemoved += DiscordOnMessageReactionRemoved;
+            
+            SerializedReactionMessage.SetDiscordClient(_client);
+            ReactionSetupCommands.SetReactionInteractions(this);
 
             LoadReactionMessages();
             CheckAllReactionMessages().Wait();
+            
+            _client.MessageReactionAdded += DiscordOnMessageReactionAdded;
+            _client.MessageReactionRemoved += DiscordOnMessageReactionRemoved;
         }
         
         private Task DiscordOnMessageReactionAdded(DiscordClient sender, MessageReactionAddEventArgs e)
@@ -42,7 +46,7 @@ namespace RoboBot
                     return;
                 }
 
-                if (e.User.Equals(Program.discord.CurrentUser))
+                if (e.User.Equals(_client.CurrentUser))
                     return;
 
                 if (!associatedMessage.Rules.TryGetValue(e.Emoji, out DiscordRole roleToGrant))
@@ -68,7 +72,7 @@ namespace RoboBot
                     return;
                 }
 
-                if (e.User.Equals(Program.discord.CurrentUser))
+                if (e.User.Equals(_client.CurrentUser))
                     return;
 
                 if (!associatedMessage.Rules.TryGetValue(e.Emoji, out DiscordRole roleToGrant))
@@ -142,7 +146,7 @@ namespace RoboBot
 
                 foreach (DiscordMember member in guildMembers)
                 {
-                    if (member.Equals(Program.discord.CurrentUser))
+                    if (member.Equals(_client.CurrentUser))
                         continue;
                     
                     bool reacted = false;
