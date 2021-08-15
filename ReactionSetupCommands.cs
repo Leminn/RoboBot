@@ -48,7 +48,7 @@ namespace RoboBot
 
             reactionMessage.Message = message;
 
-            await ctx.RespondAsync("Got the message to use, continue the setup with !reactadd (emoji) (mention to role)");
+            await ctx.RespondAsync("Got the message to use, continue the setup with !reactadd (emoji) (mention to role)\nPreview the rules with !reactpreview");
             
             IsSettingUpReactionMessage = true;
         }
@@ -93,7 +93,7 @@ namespace RoboBot
             reactionMessage = associatedMessage;
             originalOfEditedMessage = associatedMessage;
 
-            await ctx.RespondAsync("Got the message to edit, continue the edit with " /*TODO:*/);
+            await ctx.RespondAsync("Got the message to edit, continue the edit with setup with !reactadd (emoji) (mention to role)\nPreview the rules with !reactpreview");
             
             IsEditingReactionMessage = true;
         }
@@ -122,7 +122,7 @@ namespace RoboBot
             }
             
             reactionMessage.Rules.Add(emoji, role);
-            await ctx.RespondAsync($"Added {emoji} as the role \"{role.Name}\" to {reactionMessage.Message.JumpLink}");
+            //await ctx.RespondAsync($"Added {emoji} as the role \"{role.Name}\" to {reactionMessage.Message.JumpLink}");
         }
         
         [RequireGuild]
@@ -143,6 +143,28 @@ namespace RoboBot
                 return;
             
             await ctx.RespondAsync("You need to provide an emoji and mention the role to attribute it to");
+        }
+
+        [RequireGuild]
+        [Command("reactpreview")]
+        public async Task ReactPreview(CommandContext ctx)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
+            if (!IsSettingUpReactionMessage && !IsEditingReactionMessage)
+            {
+                await ctx.RespondAsync("You need to have entered setup or edit mode before previewing the result");
+                return;
+            }
+            
+            if (reactionMessage.Rules.Count == 0)
+            {
+                await ctx.RespondAsync("You need to add at least 1 reaction and role to finish the setup");
+                return;
+            }
+
+            await ctx.RespondAsync(reactionMessage.ToString());
         }
         
         [RequireGuild]
