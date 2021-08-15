@@ -174,6 +174,15 @@ namespace RoboBot
             await ctx.RespondAsync("Succesfully removed the corresponding ReactionMessage");
             
             Program.reactionInteractions.SaveToFile();
+            
+            foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in associatedReactionMessage.Rules)
+            {
+                try
+                {
+                    await associatedReactionMessage.Message.DeleteOwnReactionAsync(rule.Key);
+                }
+                catch { }
+            }
         }
 
         [RequireGuild]
