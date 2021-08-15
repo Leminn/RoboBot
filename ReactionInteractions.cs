@@ -51,7 +51,7 @@ namespace RoboBot
                     return;
                 }
 
-                ((DiscordMember)e.User).GrantRoleAsync(roleToGrant);
+                ((DiscordMember)e.User).GrantRoleAsync(roleToGrant).Wait();
                 e.Message.RespondAsync($"User was granted {e.Emoji}");
             });
         }
@@ -77,7 +77,7 @@ namespace RoboBot
                     return;
                 }
 
-                ((DiscordMember)e.User).RevokeRoleAsync(roleToGrant);
+                ((DiscordMember)e.User).RevokeRoleAsync(roleToGrant).Wait();
                 e.Message.RespondAsync($"User was revoked {e.Emoji}");
             });
         }
@@ -121,7 +121,14 @@ namespace RoboBot
         {
             foreach (ReactionMessage reactionMessage in ReactionMessages)
             {
-                await CheckAllRules(reactionMessage);
+                try
+                {
+                    await CheckAllRules(reactionMessage);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
             }
         }
 
