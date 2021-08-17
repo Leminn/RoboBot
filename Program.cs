@@ -116,6 +116,7 @@ namespace RoboBot
                     .UsingMultithreading(true)
                     .WithVideoCodec("h264")
                     .WithFastStart()
+                    .WithFramerate(35)
                     .ForcePixelFormat("yuv420p")
                     .ForceFormat("mp4"))
                 .ProcessSynchronously();
