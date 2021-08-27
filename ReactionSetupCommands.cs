@@ -13,6 +13,21 @@ namespace RoboBot
 {
     public class ReactionSetupCommands : BaseCommandModule
     {
+        private static class CommandNames
+        {
+            public const string StartSetup = "reactsetup";
+            public const string FinishSetup = "reactfinish";
+            
+            public const string PreviewReactionMessage = "reactpreview";
+            
+            public const string EditReactionMessage = "reactedit";
+            public const string RemoveReactionMessage = "reactremove";
+            
+            public const string AddEmojiToReactionMessage = "reactadd";
+
+            public const string ListReactionMessages = "reactlist";
+        }
+
         private static ReactionInteractions _reactionInteractions;
         
         private bool IsSettingUpReactionMessage = false;
@@ -26,8 +41,8 @@ namespace RoboBot
         public static void SetReactionInteractions(ReactionInteractions reactionInteractions) => _reactionInteractions = reactionInteractions;
         
         [RequireGuild]
-        [Command("reactsetup")]
-        public async Task ReactionMessageSetup(CommandContext ctx, string messageUrl)
+        [Command(CommandNames.StartSetup)]
+        public async Task StartSetup(CommandContext ctx, string messageUrl)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -52,14 +67,14 @@ namespace RoboBot
 
             reactionMessage.Message = message;
 
-            await ctx.RespondAsync("Got the message to use, continue the setup with !reactadd (emoji) (mention to role)\nPreview the rules with !reactpreview");
+            await ctx.RespondAsync($"Got the message to use, continue the setup with {ctx.Prefix}{CommandNames.AddEmojiToReactionMessage} (emoji) (mention to role)\nPreview the rules with {ctx.Prefix}{CommandNames.PreviewReactionMessage}");
             
             IsSettingUpReactionMessage = true;
         }
         
         [RequireGuild]
-        [Command("reactsetup")]
-        public async Task ReactionMessageSetup(CommandContext ctx)
+        [Command(CommandNames.StartSetup)]
+        public async Task StartSetup(CommandContext ctx)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -68,7 +83,7 @@ namespace RoboBot
         }
         
         [RequireGuild]
-        [Command("reactedit")]
+        [Command(CommandNames.EditReactionMessage)]
         public async Task EditReactionMessage(CommandContext ctx, string messageUrl)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
@@ -97,13 +112,13 @@ namespace RoboBot
             reactionMessage = associatedMessage;
             originalOfEditedMessage = associatedMessage;
 
-            await ctx.RespondAsync("Got the message to edit, continue the edit with setup with !reactadd (emoji) (mention to role)\nPreview the rules with !reactpreview");
+            await ctx.RespondAsync($"Got the message to edit, continue the edit with {ctx.Prefix}{CommandNames.AddEmojiToReactionMessage} (emoji) (mention to role)\nPreview the rules with {ctx.Prefix}{CommandNames.PreviewReactionMessage}");
             
             IsEditingReactionMessage = true;
         }
         
         [RequireGuild]
-        [Command("reactedit")]
+        [Command(CommandNames.EditReactionMessage)]
         public async Task EditReactionMessage(CommandContext ctx)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
@@ -113,8 +128,8 @@ namespace RoboBot
         }
         
         [RequireGuild]
-        [Command("reactadd")]
-        public async Task ReactionAdd(CommandContext ctx, DiscordEmoji emoji, DiscordRole role)
+        [Command(CommandNames.AddEmojiToReactionMessage)]
+        public async Task AddEmojiToReactionMessage(CommandContext ctx, DiscordEmoji emoji, DiscordRole role)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -130,8 +145,8 @@ namespace RoboBot
         }
         
         [RequireGuild]
-        [Command("reactadd")]
-        public async Task ReactionAdd(CommandContext ctx)
+        [Command(CommandNames.AddEmojiToReactionMessage)]
+        public async Task AddEmojiToReactionMessage(CommandContext ctx)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -140,8 +155,8 @@ namespace RoboBot
         }
         
         [RequireGuild]
-        [Command("reactadd")]
-        public async Task ReactionAdd(CommandContext ctx, params string[] rest)
+        [Command(CommandNames.AddEmojiToReactionMessage)]
+        public async Task AddEmojiToReactionMessage(CommandContext ctx, params string[] rest)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -150,8 +165,8 @@ namespace RoboBot
         }
 
         [RequireGuild]
-        [Command("reactpreview")]
-        public async Task ReactPreview(CommandContext ctx)
+        [Command(CommandNames.PreviewReactionMessage)]
+        public async Task PreviewReactionMessage(CommandContext ctx)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -172,8 +187,8 @@ namespace RoboBot
         }
         
         [RequireGuild]
-        [Command("reactfinish")]
-        public async Task ReactFinish(CommandContext ctx)
+        [Command(CommandNames.FinishSetup)]
+        public async Task FinishSetup(CommandContext ctx)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -222,7 +237,7 @@ namespace RoboBot
         }
         
         [RequireGuild]
-        [Command("reactlist")]
+        [Command(CommandNames.ListReactionMessages)]
         public async Task ListReactionMessages(CommandContext ctx)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
@@ -238,8 +253,8 @@ namespace RoboBot
         }
         
         [RequireGuild]
-        [Command("reactdelete")]
-        public async Task DeleteReactionMessage(CommandContext ctx, string messageToUse)
+        [Command(CommandNames.RemoveReactionMessage)]
+        public async Task RemoveReactionMessage(CommandContext ctx, string messageToUse)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
@@ -274,8 +289,8 @@ namespace RoboBot
         }
 
         [RequireGuild]
-        [Command("reactdelete")]
-        public async Task DeleteReactionMessage(CommandContext ctx)
+        [Command(CommandNames.RemoveReactionMessage)]
+        public async Task RemoveReactionMessage(CommandContext ctx)
         {
             if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
                 return;
