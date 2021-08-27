@@ -108,8 +108,13 @@ namespace RoboBot
                 await ctx.RespondAsync("This message doesn't have reaction interactions setup");
                 return;
             }
-
-            reactionMessage = associatedMessage;
+            
+            reactionMessage.Message = associatedMessage.Message;
+            foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in associatedMessage.Rules)
+            {
+                reactionMessage.Rules.Add(rule.Key, rule.Value);
+            }
+            
             originalOfEditedMessage = associatedMessage;
 
             await ctx.RespondAsync($"Got the message to edit, continue the edit with {ctx.Prefix}{CommandNames.AddEmojiToReactionMessage} (emoji) (mention to role)\nPreview the rules with {ctx.Prefix}{CommandNames.PreviewReactionMessage}");
