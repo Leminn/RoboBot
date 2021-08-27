@@ -17,6 +17,8 @@ namespace RoboBot
         {
             public const string StartSetup = "reactsetup";
             public const string FinishSetup = "reactfinish";
+            public const string AbortSetup = "reactabort";
+            public const string RestartSetup = "reactrestart";
             
             public const string PreviewReactionMessage = "reactpreview";
             
@@ -24,6 +26,7 @@ namespace RoboBot
             public const string RemoveReactionMessage = "reactremove";
             
             public const string AddEmojiToReactionMessage = "reactadd";
+            public const string DeleteEmojiFromReactionMessage = "reactdel";
 
             public const string ListReactionMessages = "reactlist";
         }
@@ -133,6 +136,59 @@ namespace RoboBot
         }
         
         [RequireGuild]
+        [Command(CommandNames.AbortSetup)]
+        public async Task AbortSetup(CommandContext ctx)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
+            if (!IsSettingUpReactionMessage && !IsEditingReactionMessage)
+            {
+                await ctx.RespondAsync("Nothing to abort");
+                return;
+            }
+            
+            reactionMessage = new ReactionMessage();
+            originalOfEditedMessage = new ReactionMessage();
+            
+            IsSettingUpReactionMessage = false;
+            IsEditingReactionMessage = false;
+            
+            await ctx.RespondAsync("Aborted setup / edit");
+        }
+        
+        [RequireGuild]
+        [Command(CommandNames.RestartSetup)]
+        public async Task RestartSetup(CommandContext ctx)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
+            if (!IsSettingUpReactionMessage && !IsEditingReactionMessage)
+            {
+                await ctx.RespondAsync("Nothing to restart");
+                return;
+            }
+
+            if (IsSettingUpReactionMessage)
+            {
+                reactionMessage.Rules = new Dictionary<DiscordEmoji, DiscordRole>();
+            }
+            else if (IsEditingReactionMessage)
+            {
+                reactionMessage = new ReactionMessage();
+                
+                reactionMessage.Message = originalOfEditedMessage.Message;
+                foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in originalOfEditedMessage.Rules)
+                {
+                    reactionMessage.Rules.Add(rule.Key, rule.Value);
+                }
+            }
+
+            await ctx.RespondAsync("Restarted setup / edit");
+        }
+        
+        [RequireGuild]
         [Command(CommandNames.AddEmojiToReactionMessage)]
         public async Task AddEmojiToReactionMessage(CommandContext ctx, DiscordEmoji emoji, DiscordRole role)
         {
@@ -145,6 +201,25 @@ namespace RoboBot
                 return;
             }
             
+            //FIXME: This is pretty bad, try to find an other solution.
+            //Check to see if the bot has access to the emoji or not
+            try
+            {
+                await ctx.Message.CreateReactionAsync(emoji);
+                await ctx.Message.DeleteOwnReactionAsync(emoji);
+            }
+            catch
+            {
+                await ctx.RespondAsync("This emoji is not available to the bot");
+                return;
+            }
+
+            if (reactionMessage.Rules.ContainsKey(emoji))
+            {
+                await ctx.RespondAsync("This emoji is already assigned to a role");
+                return;
+            }
+
             reactionMessage.Rules.Add(emoji, role);
             //await ctx.RespondAsync($"Added {emoji} as the role \"{role.Name}\" to {reactionMessage.Message.JumpLink}");
         }
@@ -167,6 +242,48 @@ namespace RoboBot
                 return;
             
             await ctx.RespondAsync("You need to provide an emoji and mention the role to attribute it to");
+        }
+        
+        [RequireGuild]
+        [Command(CommandNames.DeleteEmojiFromReactionMessage)]
+        public async Task DeleteEmojiToReactionMessage(CommandContext ctx, DiscordEmoji emoji)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
+            if (!IsSettingUpReactionMessage && !IsEditingReactionMessage)
+            {
+                await ctx.RespondAsync("You need to have entered setup or edit mode to delete reactions from a message");
+                return;
+            }
+            
+            if (!reactionMessage.Rules.ContainsKey(emoji))
+            {
+                await ctx.RespondAsync("This emoji isn't associated to a role");
+                return;
+            }
+
+            reactionMessage.Rules.Remove(emoji);
+        }
+
+        [RequireGuild]
+        [Command(CommandNames.DeleteEmojiFromReactionMessage)]
+        public async Task DeleteEmojiToReactionMessage(CommandContext ctx)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
+            await ctx.RespondAsync("You need to provide an emoji to delete from the message");
+        }
+        
+        [RequireGuild]
+        [Command(CommandNames.DeleteEmojiFromReactionMessage)]
+        public async Task DeleteEmojiToReactionMessage(CommandContext ctx, params string[] rest)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+            
+            await ctx.RespondAsync("You need to provide an emoji to delete from the message");
         }
 
         [RequireGuild]
