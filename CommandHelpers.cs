@@ -42,11 +42,17 @@ namespace RoboBot
                 return null;
             }
 
+            if (!ctx.Guild.Channels.TryGetValue(channelId, out DiscordChannel channel))
+            {
+                await ctx.RespondAsync("Can't get the channel, make sure it is part of this Discord server and that the bot has access to it");
+                return null;
+            }
+            
             DiscordMessage message;
 
             try
             {
-                message = await ctx.Guild.Channels[channelId].GetMessageAsync(messageId);
+                message = await channel.GetMessageAsync(messageId);
             }
             catch (Exception e)
             {
