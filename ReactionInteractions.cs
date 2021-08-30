@@ -50,20 +50,11 @@ namespace RoboBot
             {
                 ReactionMessage associatedMessage = ReactionMessages.FirstOrDefault(x => x.Message.Equals(e.Message));
 
-                if (associatedMessage == null)
-                {
-                    e.Message.RespondAsync("nothing associated, do nothing");
-                    return;
-                }
-
-                if (e.User.Equals(_client.CurrentUser))
+                if (associatedMessage == null || e.User.Equals(_client.CurrentUser))
                     return;
 
                 if (!associatedMessage.Rules.TryGetValue(e.Emoji, out DiscordRole roleToGrant))
-                {
-                    e.Message.RespondAsync("sadge");
                     return;
-                }
 
                 ((DiscordMember)e.User).GrantRoleAsync(roleToGrant).Wait();
                 e.Message.RespondAsync($"User was granted {e.Emoji}");
@@ -76,20 +67,11 @@ namespace RoboBot
             {
                 ReactionMessage associatedMessage = ReactionMessages.FirstOrDefault(x => x.Message.Equals(e.Message));
 
-                if (associatedMessage == null)
-                {
-                    e.Message.RespondAsync("nothing associated, do nothing");
-                    return;
-                }
-
-                if (e.User.Equals(_client.CurrentUser))
+                if (associatedMessage == null || e.User.Equals(_client.CurrentUser))
                     return;
 
                 if (!associatedMessage.Rules.TryGetValue(e.Emoji, out DiscordRole roleToGrant))
-                {
-                    e.Message.RespondAsync("sadge");
                     return;
-                }
 
                 ((DiscordMember)e.User).RevokeRoleAsync(roleToGrant).Wait();
                 e.Message.RespondAsync($"User was revoked {e.Emoji}");
