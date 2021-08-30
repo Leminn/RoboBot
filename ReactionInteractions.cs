@@ -27,6 +27,16 @@ namespace RoboBot
             SerializedReactionMessage.SetDiscordClient(_client);
             ReactionSetupCommands.SetReactionInteractions(this);
 
+            foreach (ulong guildId in client.Guilds.Keys)
+            {
+                ReactionSetupCommands.CreateGuildState(guildId);
+            }
+
+            _client.GuildCreated += (o, e) => 
+                Task.Run(() => ReactionSetupCommands.CreateGuildState(e.Guild.Id)); 
+            _client.GuildDeleted += (o, e) => 
+                Task.Run(() => ReactionSetupCommands.RemoveGuildState(e.Guild.Id));
+
             LoadReactionMessages();
             CheckAllReactionMessages().Wait();
             
