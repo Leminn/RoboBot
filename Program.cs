@@ -145,6 +145,15 @@ namespace RoboBot
                 PollBehaviour = PollBehaviour.KeepEmojis,
                 Timeout = TimeSpan.FromSeconds(30)
             });
+            
+            discord.GuildDownloadCompleted += (sender, eventArgs) =>
+            {
+                return Task.Run(() =>
+                {
+                    GuildEventLogger.Initialize(ref discord);
+                    commands.RegisterCommands<GuildEventLoggerCommands>();
+                });
+            };
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
