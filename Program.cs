@@ -146,15 +146,6 @@ namespace RoboBot
                 Timeout = TimeSpan.FromSeconds(30)
             });
             
-            discord.GuildDownloadCompleted += (sender, eventArgs) =>
-            {
-                return Task.Run(() =>
-                {
-                    GuildEventLogger.Initialize(ref discord);
-                    commands.RegisterCommands<GuildEventLoggerCommands>();
-                });
-            };
-
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { "!" },
@@ -165,6 +156,9 @@ namespace RoboBot
             {
                 return Task.Run(() =>
                 {
+                    GuildEventLogger.Initialize(ref discord);
+                    commands.RegisterCommands<GuildEventLoggerCommands>();
+                    
                     Console.WriteLine("Initializing ReactionInteractions...");
                     reactionInteractions = new ReactionInteractions(discord);
                     commands.RegisterCommands<ReactionSetupCommands>();
