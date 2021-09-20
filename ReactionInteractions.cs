@@ -56,8 +56,10 @@ namespace RoboBot
                 if (!associatedMessage.Rules.TryGetValue(e.Emoji, out DiscordRole roleToGrant))
                     return;
 
-                ((DiscordMember)e.User).GrantRoleAsync(roleToGrant).Wait();
-                e.Message.RespondAsync($"User was granted {e.Emoji}");
+                DiscordMember member = ((DiscordMember)e.User);
+                member.GrantRoleAsync(roleToGrant).Wait();
+                GuildEventLogger.Instance
+                    .LogInfo(e.Guild, $"{member.Mention} was granted the role {roleToGrant.Mention} by reacting to [this message]({associatedMessage.Message.JumpLink})").Wait();
             });
         }
         
@@ -73,8 +75,10 @@ namespace RoboBot
                 if (!associatedMessage.Rules.TryGetValue(e.Emoji, out DiscordRole roleToGrant))
                     return;
 
-                ((DiscordMember)e.User).RevokeRoleAsync(roleToGrant).Wait();
-                e.Message.RespondAsync($"User was revoked {e.Emoji}");
+                DiscordMember member = ((DiscordMember)e.User);
+                member.RevokeRoleAsync(roleToGrant).Wait();
+                GuildEventLogger.Instance
+                    .LogInfo(e.Guild, $"{member.Mention} was revoked the role {roleToGrant.Mention} by reacting to [this message]({associatedMessage.Message.JumpLink})").Wait();
             });
         }
 
