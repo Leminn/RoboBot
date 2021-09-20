@@ -29,6 +29,7 @@ namespace RoboBot
             public const string DeleteEmojiFromReactionMessage = "reactdel";
 
             public const string ListReactionMessages = "reactlist";
+            public const string CheckReactionMessage = "reactcheck";
         }
 
         private class SetupState
@@ -442,6 +443,32 @@ namespace RoboBot
                 return;
 
             await ctx.RespondAsync("You need to provide the original message id you want to delete");
+        }
+        
+        [RequireGuild]
+        [Command(CommandNames.CheckReactionMessage)]
+        public async Task CheckReactionMessage(CommandContext ctx, string messageToUse)
+        {
+            if (!await CommandHelpers.CheckPermissions(ctx, RequiredPermissions))
+                return;
+
+            DiscordMessage message = await CommandHelpers.GetMessageFromUrl(ctx, messageToUse);
+
+            if (message is null)
+                return;
+
+            ReactionMessage associatedReactionMessage =
+                _reactionInteractions.ReactionMessages.FirstOrDefault(x => x.Message.Equals(message));
+            
+            if (associatedReactionMessage == null)
+            {
+                await ctx.RespondAsync("Couldn't find the ReactionMessage associated with this Discord message");
+                return;
+            }
+
+            await ctx.TriggerTypingAsync();
+            await _reactionInteractions.CheckAllRules(associatedReactionMessage);
+            await ctx.RespondAsync("Done");
         }
     }
 }
