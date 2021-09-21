@@ -34,6 +34,22 @@ namespace RoboBot
             return sb.ToString();
         }
     }
+    
+    public class SerializedRule
+    {
+        public bool IsGuildEmoji;
+        
+        public string EmojiNameOrId;
+
+        public ulong RoleId;
+
+        public SerializedRule(bool isGuildEmoji, string emojiNameOrId, ulong roleId)
+        {
+            IsGuildEmoji = isGuildEmoji;
+            EmojiNameOrId = emojiNameOrId;
+            RoleId = roleId;
+        }
+    }
 
     public class SerializedReactionMessage
     {
@@ -42,7 +58,7 @@ namespace RoboBot
         public ulong ChannelId { get; }
         public ulong MessageId { get; }
         
-        public Dictionary<string, ulong> Rules { get; }
+        public List<SerializedRule> Rules { get; }
         
         public static void SetDiscordClient(DiscordClient client) => _client = client;
 
@@ -52,17 +68,23 @@ namespace RoboBot
             ChannelId = reactionMessage.Message.ChannelId;
             MessageId = reactionMessage.Message.Id;
 
-            Rules = new Dictionary<string, ulong>();
+            Rules = new List<SerializedRule>();
 
             foreach (KeyValuePair<DiscordEmoji, DiscordRole> rule in reactionMessage.Rules)
             {
-                Rules.Add(rule.Key.GetDiscordName(), rule.Value.Id);
+                if (rule.Key.Id != 0)
+                {
+                    Rules.Add(new SerializedRule(true, rule.Key.Id.ToString(), rule.Value.Id));
+                    continue;
+                }
+                
+                Rules.Add(new SerializedRule(false, rule.Key.GetDiscordName(), rule.Value.Id));
             }
         }
 
         [JsonConstructor]
         public SerializedReactionMessage(ulong guildId, ulong channelId, ulong messageId,
-            Dictionary<string, ulong> rules)
+            List<SerializedRule> rules)
         {
             GuildId = guildId;
             ChannelId = channelId;
@@ -98,17 +120,33 @@ namespace RoboBot
 
             Dictionary<DiscordEmoji, DiscordRole> reactionRules = new Dictionary<DiscordEmoji, DiscordRole>();
 
-            foreach (KeyValuePair<string, ulong> rule in Rules)
+            foreach (SerializedRule rule in Rules)
             {
-                if(!DiscordEmoji.TryFromName(_client, rule.Key, out DiscordEmoji emoji))
+                DiscordEmoji emoji;
+
+                if (rule.IsGuildEmoji)
                 {
-                    message.RespondAsync($"Could not load emoji {rule.Key}. Has it been removed or renamed? (Skipping this rule)");
-                    continue;
+                    ulong id = ulong.Parse(rule.EmojiNameOrId);
+                    
+                    if(!DiscordEmoji.TryFromGuildEmote(_client, id, out emoji))
+                    {
+                        GuildEventLogger.Instance.LogWarning(guild, $"Could not load emoji {rule.EmojiNameOrId}. Has it been removed or renamed? (Skipping this rule)");
+                        continue;
+                    }
+                }
+                else
+                {
+                    if(!DiscordEmoji.TryFromName(_client, rule.EmojiNameOrId, out emoji))
+                    {
+                        GuildEventLogger.Instance.LogWarning(guild, $"Could not load emoji {rule.EmojiNameOrId}. Has it been removed or renamed? (Skipping this rule)");
+                        continue;
+                    }
                 }
                 
-                if(!guild.Roles.TryGetValue(rule.Value, out DiscordRole role))
+                
+                if(!guild.Roles.TryGetValue(rule.RoleId, out DiscordRole role))
                 {
-                    message.RespondAsync($"Could not load role ID {rule.Value}. Has it been removed? (Skipping this rule)");
+                    GuildEventLogger.Instance.LogWarning(guild, $"Could not load role ID {rule.RoleId}. Has it been removed? (Skipping this rule)");
                     continue;
                 }
                 
