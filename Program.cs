@@ -12,6 +12,7 @@ using FFMpegCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using System.Timers;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
@@ -46,6 +47,7 @@ namespace RoboBot
         public static Stats s = new Stats(ref srcClient);
 #endif
 
+        private static Timer leminMentionTimer = new Timer(86_400_000) { AutoReset = true, Enabled = true };
 
         private static void Main(string[] args)
         {
@@ -53,6 +55,24 @@ namespace RoboBot
             replayEvents.Processed += ReplayProcessed;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        private static void LeminMentionTimerOnElapsed(object sender, ElapsedEventArgs e)
+        {
+            foreach (DiscordGuild guild in discord.Guilds.Values)
+            {
+                if (guild.Name == "the gamer place")
+                {
+                    foreach (DiscordChannel channel in guild.Channels.Values)
+                    {
+                        if (channel.Name == "ps3")
+                        {
+                            DiscordMember member = guild.GetMemberAsync(111175736701779968).Result;
+                            channel.SendMessageAsync($"{member.Mention} 200 emblems run when").Wait();
+                        }
+                    }
+                }
+            }
         }
 
         private static void ReplayProcessed(object sender, ReplayEventArgs args)
@@ -151,6 +171,64 @@ namespace RoboBot
                 StringPrefixes = new string[] { "!" },
                 EnableDefaultHelp = false
             });
+            discord.ComponentInteractionCreated += async (s, e) =>
+            {
+                if (e.Interaction.User.Username == Commands.helpUser)
+                {
+                     if (e.Interaction.Data.ComponentType == ComponentType.Select)
+                    {
+                    string message = "";
+                    foreach (var thing in e.Values)
+                    {
+                        message += thing;
+                    }
+
+                    DiscordEmbedBuilder commandList = new DiscordEmbedBuilder();
+                    switch (message)
+                    {
+                        case "records_label":
+                            commandList = new DiscordEmbedBuilder
+                            {
+                                Title = "Help (!records)",
+                                Description = "The !records command can be used for ILs while !fgrecords is used for Full-game Runs\n\n IL: !records (level) (character) \n FG: !fgrecords (category) (character) (version) \n\n For SRB1 Remake and All Emblems you don't need to put the character.",
+                                Color = DiscordColor.Gold
+                            };
+                            commandList.AddField("IL Example", "!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
+                            commandList.AddField("Full-game Example", "!fgrecords any% knuckles 2.1 = Knuckles Any% 2.1");
+                            commandList.AddField("Full-game Example 2", "!fgrecords emblems 2.1 = All Emblems 2.1");
+                            break;
+
+                        case "replay_label":
+                            commandList = new DiscordEmbedBuilder
+                            {
+                                Title = "Help (!reptogif)",
+                                Description = "Use !reptogif and attach a file to convert your replay to a gif file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptogif (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted. \n\n Large replays (60kb+) might not embed properly onto discord but they will still be hosted.",
+                                Color = DiscordColor.Gold
+                            };
+                            break;
+                        case "host_label":
+                            commandList = new DiscordEmbedBuilder
+                            {
+                                Title = "Help (!host)",
+                                Description = "Attach a file to your message and send '!host' to upload your replay to roborecords.org. \n\n The bot will give you back a link you can use for verification on SRC ILs.",
+                                Color = DiscordColor.Gold
+                            };
+                            break;
+                    }
+
+                    DiscordMessageBuilder ruleMessage = new DiscordMessageBuilder().AddEmbed(commandList).WithContent("");
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder(ruleMessage));
+                }
+                     
+                }
+                else
+                {
+                    await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
+                }
+               
+                
+            };
+            
 
             discord.GuildDownloadCompleted += (sender, eventArgs) =>
             {
@@ -163,12 +241,15 @@ namespace RoboBot
                     reactionInteractions = new ReactionInteractions(discord);
                     commands.RegisterCommands<ReactionSetupCommands>();
                     Console.WriteLine("ReactionInteractions Initialized!");
+                    
+                    leminMentionTimer.Elapsed += LeminMentionTimerOnElapsed;
                 });
             };
 
+        
             commands.RegisterCommands<Commands>();
 
-            DiscordActivity activity = new DiscordActivity("greenflower", ActivityType.ListeningTo);
+            DiscordActivity activity = new DiscordActivity("gfz1 stream", ActivityType.Watching);
 
             await discord.ConnectAsync(activity);
             await Task.Delay(-1);

@@ -1,0 +1,54 @@
+diff --git a/Program.cs b/Program.cs
+index 05a0943..e18c712 100644
+--- a/Program.cs
++++ b/Program.cs
+@@ -12,6 +12,7 @@ using FFMpegCore;
+ using System.Linq;
+ using System.Net;
+ using System.Threading.Tasks;
++using System.Timers;
+ using DSharpPlus.EventArgs;
+ using DSharpPlus.Interactivity;
+ using DSharpPlus.Interactivity.Enums;
+@@ -46,6 +47,7 @@ namespace RoboBot
+         public static Stats s = new Stats(ref srcClient);
+ #endif
+ 
++        private static Timer leminMentionTimer = new Timer(86_400_000) { AutoReset = true, Enabled = true };
+ 
+         private static void Main(string[] args)
+         {
+@@ -55,6 +57,24 @@ namespace RoboBot
+             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+         }
+ 
++        private static void LeminMentionTimerOnElapsed(object sender, ElapsedEventArgs e)
++        {
++            foreach (DiscordGuild guild in discord.Guilds.Values)
++            {
++                if (guild.Name == "the gamer place")
++                {
++                    foreach (DiscordChannel channel in guild.Channels.Values)
++                    {
++                        if (channel.Name == "ps3")
++                        {
++                            DiscordMember member = guild.GetMemberAsync(111175736701779968).Result;
++                            channel.SendMessageAsync($"{member.Mention} 200 emblems run when").Wait();
++                        }
++                    }
++                }
++            }
++        }
++
+         private static void ReplayProcessed(object sender, ReplayEventArgs args)
+         {
+ 
+@@ -163,6 +183,8 @@ namespace RoboBot
+                     reactionInteractions = new ReactionInteractions(discord);
+                     commands.RegisterCommands<ReactionSetupCommands>();
+                     Console.WriteLine("ReactionInteractions Initialized!");
++                    
++                    leminMentionTimer.Elapsed += LeminMentionTimerOnElapsed;
+                 });
+             };
+ 

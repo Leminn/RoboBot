@@ -14,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.Interactivity.Extensions;
 using FFMpegCore;
 
@@ -37,7 +38,16 @@ namespace RoboBot
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
 
-        
+        public static string helpUser = "";
+
+        [Command("drop")]
+        public async Task DropDown(CommandContext ctx)
+        {
+            // new DiscordComponentEmoji(896487017385431091) new DiscordComponentEmoji(896487233262088202)
+            // Create the options for the user to pick
+
+            
+        }
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
@@ -200,45 +210,29 @@ namespace RoboBot
             }
         }
 
-       
 
 
-        [Command("help")]
-        public async Task Help(CommandContext ctx) =>  await HelpSheet(ctx, " ");
 
         [Command("help")]
-        public async Task HelpSheet(CommandContext ctx, string command)
+        public async Task Help(CommandContext ctx)
         {
-            DiscordEmbedBuilder commandList;
-            switch (command)
+            BaseDiscordClient client = Program.discord;
+            helpUser = ctx.User.Username;
+            DiscordEmoji joystickEmoji = DiscordEmoji.FromName(client, ":joystick:");
+            DiscordEmoji filmEmoji = DiscordEmoji.FromName(client, ":film_frames:");
+            DiscordEmoji cloudEmoji = DiscordEmoji.FromName(client, ":cloud:");
+            
+            var options = new List<DiscordSelectComponentOption>()
             {
-                case "records":
-                    commandList = new DiscordEmbedBuilder
-                    {
-                        Title = "Help (!records)",
-                        Description = "The !records command can be used for ILs while !fgrecords is used for Full-game Runs\n\n IL: !records (level) (character) \n FG: !fgrecords (category) (character) (version) \n\n For SRB1 Remake and All Emblems you don't need to put the character.",
-                        Color = DiscordColor.Gold
-                    };
-                    commandList.AddField("IL Example", "!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
-                    commandList.AddField("Full-game Example", "!fgrecords any% knuckles 2.1 = Knuckles Any% 2.1");
-                    commandList.AddField("Full-game Example 2", "!fgrecords emblems 2.1 = All Emblems 2.1");
-                    await ctx.RespondAsync(embed: commandList);
-                    break;
-
-                case "reptogif":
-                    commandList = new DiscordEmbedBuilder
-                    {
-                        Title = "Help (!reptogif)",
-                        Description = "Use !reptogif and attach a file to convert your replay to a gif file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptogif (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted. \n\n Large replays (60kb+) might not embed properly onto discord but they will still be hosted.",
-                        Color = DiscordColor.Gold
-                    };
-                    await ctx.RespondAsync(embed: commandList);
-                    break;
-
-                default:
-                    await ctx.RespondAsync("Enter either !help records or !help reptogif");
-                    break;
-            }
+                new DiscordSelectComponentOption("!records", "records_label", "Get the top 5 records of any level/category!",emoji: new DiscordComponentEmoji(joystickEmoji)),
+                new DiscordSelectComponentOption("!reptomp4", "replay_label", "Convert your replays into Mp4s!", emoji: new DiscordComponentEmoji(filmEmoji)),
+                new DiscordSelectComponentOption("!host", "host_label", "Easily host your replay files!", emoji: new DiscordComponentEmoji(cloudEmoji))
+            };
+            var dropdown = new DiscordSelectComponent("dropdown", null, options,false,1,1);
+            
+            var builder = new DiscordMessageBuilder().WithContent("What command would you like to learn about?").AddComponents(dropdown);
+            
+            await builder.SendAsync(ctx.Channel); 
         }
 
         [Command("site")]
