@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Text;
 
+/* FIXME: This require a refactor to not use byte arrays and not considering
+          any transmission over the network as this has been unneeded for a while now */ 
 namespace RoboBot
 {
     public class JobInfo

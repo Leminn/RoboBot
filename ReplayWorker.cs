@@ -131,26 +131,25 @@ namespace RoboBot
                 if(replayInfo.HasAddons)
                 {
                     addons = "-file ";
-                    List<string> charactersDirectory = new List<string>(); 
-                    charactersDirectory.AddRange(Directory.GetFiles("/root/.srb2/addons/Characters")
-                        .Select(Path.GetFileName));
-                    List<string> levelsDirectory = new List<string>();
-                    levelsDirectory.AddRange(Directory.GetFiles("/root/.srb2/addons/Levels")
+                    List<string> charactersDirectoryFiles = new List<string>(Directory.GetFiles("/root/.srb2/addons/Characters")
+                        .Select(Path.GetFileName)); 
+                    
+                    List<string> levelsDirectoryFiles = new List<string>(Directory.GetFiles("/root/.srb2/addons/Levels")
                         .Select(Path.GetFileName));
                     foreach (var addonfname in replayInfo.AddonsFileNames)
                     {
-                        var charMatch = charactersDirectory.Where(stringToCheck => stringToCheck.Contains(addonfname.ToString()));
+                        string addonName = System.Text.Encoding.ASCII.GetString(addonfname);
+                        var charMatch = charactersDirectoryFiles.Where(stringToCheck => stringToCheck == addonName);
                         if (charMatch != null)
                         {
-                            addons += "/Characters/";
+                            addons += "Characters/";
                         };
-                        var levelMatch = levelsDirectory.Where(stringToCheck => stringToCheck.Contains(addonfname.ToString()));
+                        var levelMatch = levelsDirectoryFiles.Where(stringToCheck => stringToCheck == addonName);
                         if (levelMatch != null)
                         {
-                            addons += "/Levels/";
+                            addons += "Levels/";
                         };
-                        addons += System.Text.Encoding.ASCII.GetString(addonfname) + " ";
-
+                        addons += addonName + ' ';
                     }
                 }
 

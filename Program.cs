@@ -53,8 +53,8 @@ namespace RoboBot
 
         private static void Main(string[] args)
         {
-            //replayEvents.StartProcessing();
-            ///replayEvents.Processed += ReplayProcessed;
+            replayEvents.StartProcessing();
+            replayEvents.Processed += ReplayProcessed;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
