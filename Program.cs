@@ -148,7 +148,7 @@ namespace RoboBot
                     .ForceFormat("mp4"))
                 .ProcessSynchronously();
         }
-        private static string MakeModList(string[] mods)
+        private static string MakeModList(List<string> mods)
         {
             string modList = "";
             foreach (var mod in mods)
@@ -237,32 +237,44 @@ namespace RoboBot
                             break;
                         
                         case ComponentType.Button:
-                            string label = "";
-                            label += e.Values;
-                            string[] addons = {"you shouldnt see this"};
+                            string label = e.Id;
+                            List<string> addons = new List<string>();
                             switch (label)
                             {
                                 case "Characters":
-                                    addons = Directory.GetFiles("/root/.srb2/addons/Characters")
-                                        .Select(Path.GetFileName).ToArray();
-                                    
-                                    break;
+                                    addons.AddRange(Directory.GetFiles("/root/.srb2/addons/Characters")
+                                        .Select(Path.GetFileName));
+                                        break;
                                 case "Levels":
-                                    addons = Directory.GetFiles("/root/.srb2/addons/Levels")
-                                        .Select(Path.GetFileName).ToArray();
+                                    addons.AddRange(Directory.GetFiles("/root/.srb2/addons/Levels")
+                                        .Select(Path.GetFileName));
                                     break;
                                 case "2.1":
-                                    addons = Directory.GetFiles("/root/.srb2/.srb21/addons")
-                                        .Select(Path.GetFileName).ToArray();
+                                    addons.AddRange(Directory.GetFiles("/root/.srb2/.srb21/addons")
+                                        .Select(Path.GetFileName));
                                     break;
                             }
-                            Array.Sort(addons);
-                            string modList = MakeModList(addons);
 
+                            if (!addons.Any())
+                            {
+                                await e.Channel.SendMessageAsync("Addons are empty here.");
+                                return;
+                            }
+          
+                            string modList = MakeModList(addons.OrderBy(x => x).ToList());
                             var interactivity = discord.GetInteractivity();
                             var pages = interactivity.GeneratePagesInEmbed(modList);
-                            await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
-                            await e.Channel.SendPaginatedMessageAsync(Commands.addonsUser, pages);
+                            
+                            var addonList = new DiscordEmbedBuilder
+                            {
+                                Title = "Addons for ReplayToMp4 Converter",
+                                Description = "Here are the addons available for use with the converter.",
+                                Color = DiscordColor.Gold
+                            };
+                            addonList.AddField(label + ":",modList);
+                            DiscordInteractionResponseBuilder addonsResponse = new DiscordInteractionResponseBuilder()
+                                .AddEmbed(addonList);
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,addonsResponse.AddEmbed(addonList));
                             break;
                     }
                     
