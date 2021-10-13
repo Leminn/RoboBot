@@ -274,7 +274,7 @@ namespace RoboBot
                             addonList.AddField(label + ":",modList);
                             DiscordInteractionResponseBuilder addonsResponse = new DiscordInteractionResponseBuilder()
                                 .AddEmbed(addonList);
-                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,addonsResponse.AddEmbed(addonList));
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,addonsResponse);
                             break;
                     }
                     

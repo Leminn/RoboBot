@@ -43,11 +43,6 @@ namespace RoboBot
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
-            
-
-
-
-        
                     BaseDiscordClient client = Program.discord;
                     helpUser = ctx.User.Username;
                     DiscordEmoji mapEmoji = DiscordEmoji.FromName(client, ":map:");

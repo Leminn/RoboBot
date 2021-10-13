@@ -131,8 +131,27 @@ namespace RoboBot
                 if(replayInfo.HasAddons)
                 {
                     addons = "-file ";
+                    List<string> charactersDirectory = new List<string>(); 
+                    charactersDirectory.AddRange(Directory.GetFiles("/root/.srb2/addons/Characters")
+                        .Select(Path.GetFileName));
+                    List<string> levelsDirectory = new List<string>();
+                    levelsDirectory.AddRange(Directory.GetFiles("/root/.srb2/addons/Levels")
+                        .Select(Path.GetFileName));
                     foreach (var addonfname in replayInfo.AddonsFileNames)
+                    {
+                        var charMatch = charactersDirectory.Where(stringToCheck => stringToCheck.Contains(addonfname.ToString()));
+                        if (charMatch != null)
+                        {
+                            addons += "/Characters/";
+                        };
+                        var levelMatch = levelsDirectory.Where(stringToCheck => stringToCheck.Contains(addonfname.ToString()));
+                        if (levelMatch != null)
+                        {
+                            addons += "/Levels/";
+                        };
                         addons += System.Text.Encoding.ASCII.GetString(addonfname) + " ";
+
+                    }
                 }
 
                 GameProcess.StartInfo.Arguments = "./reptovid -home /root -playdemo replay/downloaded.lmp  " + addons + "-- :1";
