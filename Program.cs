@@ -148,6 +148,16 @@ namespace RoboBot
                     .ForceFormat("mp4"))
                 .ProcessSynchronously();
         }
+        private static string MakeModList(string[] mods)
+        {
+            string modList = "";
+            foreach (var mod in mods)
+            {
+                modList += mod;
+                if (mod != mods.Last()) modList += ", ";
+            }
+            return modList;
+        }
 
         private static async Task MainAsync(string[] args)
         {
@@ -169,7 +179,7 @@ namespace RoboBot
             });
             discord.ComponentInteractionCreated += async (s, e) =>
             {
-                if (e.Interaction.User.Username == Commands.helpUser)
+                if (e.Interaction.User.Username == Commands.helpUser || e.Interaction.User.Username == Commands.addonsUser.Username)
                 {
                     switch (e.Interaction.Data.ComponentType)
                     {
@@ -229,25 +239,30 @@ namespace RoboBot
                         case ComponentType.Button:
                             string label = "";
                             label += e.Values;
+                            string[] addons = {"you shouldnt see this"};
                             switch (label)
                             {
                                 case "Characters":
-                                    string[] addons22Characters = Directory.GetFiles("/root/.srb2/addons/Characters")
+                                    addons = Directory.GetFiles("/root/.srb2/addons/Characters")
                                         .Select(Path.GetFileName).ToArray();
-                                    Array.Sort(addons22Characters);
+                                    
                                     break;
                                 case "Levels":
-                                    
-                                    string[] addons22Levels = Directory.GetFiles("/root/.srb2/addons/Levels")
+                                    addons = Directory.GetFiles("/root/.srb2/addons/Levels")
                                         .Select(Path.GetFileName).ToArray();
-                                    Array.Sort(addons22Levels);
                                     break;
                                 case "2.1":
-                                    string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
+                                    addons = Directory.GetFiles("/root/.srb2/.srb21/addons")
                                         .Select(Path.GetFileName).ToArray();
-                                    Array.Sort(addons21);
                                     break;
                             }
+                            Array.Sort(addons);
+                            string modList = MakeModList(addons);
+
+                            var interactivity = discord.GetInteractivity();
+                            var pages = interactivity.GeneratePagesInEmbed(modList);
+                            
+                            await e.Channel.SendPaginatedMessageAsync(Commands.addonsUser, pages);
                             break;
                     }
                     

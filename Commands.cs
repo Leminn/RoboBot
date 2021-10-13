@@ -38,6 +38,7 @@ namespace RoboBot
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
         public static string helpUser = "";
+        public static DiscordMember addonsUser;
         
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
@@ -53,14 +54,14 @@ namespace RoboBot
                     DiscordEmoji questionEmoji = DiscordEmoji.FromName(client, ":question:");
 
                     var builder = new DiscordMessageBuilder()
-                        .WithContent("This message has buttons! Pretty neat innit?")
+                        .WithContent("Which addons would you like to see?")
                         .AddComponents(new DiscordComponent[]
                         {
                             new DiscordButtonComponent(ButtonStyle.Primary, "Characters", "Characters (2.2)", false, new DiscordComponentEmoji(questionEmoji)),
                             new DiscordButtonComponent(ButtonStyle.Success, "Levels", "Levels (2.2)",false, new DiscordComponentEmoji(mapEmoji)),
                             new DiscordButtonComponent(ButtonStyle.Secondary, "2.1", "2.1 Addons")
                         });
-            
+                    addonsUser = ctx.Member;
                     
             
             // var addonList = new DiscordEmbedBuilder
@@ -75,16 +76,7 @@ namespace RoboBot
              await ctx.RespondAsync(builder);
         }
 
-        private static string MakeModList(string[] mods)
-        {
-            string modList = "";
-            foreach (var mod in mods)
-            {
-                modList += mod;
-                if (mod != mods.Last()) modList += ", ";
-            }
-            return modList;
-        }
+
 
         [Command("queue")]
         public async Task ReplayQueue(CommandContext ctx)
