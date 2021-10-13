@@ -7,6 +7,7 @@ using DSharpPlus.Entities;
 using SpeedrunComSharp;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using FFMpegCore;
 using System.Linq;
@@ -21,7 +22,6 @@ using DSharpPlus.Interactivity.Extensions;
 
 namespace RoboBot
 {
-
     internal class Program
     {
         public static string timeFormat = @"ss\.ff";
@@ -30,19 +30,21 @@ namespace RoboBot
         public static DiscordClient discord;
         public static string gameId = "76ryx418";
         private static CommandsNextExtension commands;
-        
+
         public static List<CommandContext> convertQueue = new List<CommandContext>();
 
         public static ReplayWorker replayEvents = new ReplayWorker();
 
         public static ReactionInteractions reactionInteractions;
-        
+
 #if NO_SRC
         public static SpeedrunComClient srcClient;
         public static Game srb2Game;
         public static Stats s;
 #else
-        public static SpeedrunComClient srcClient = new SpeedrunComClient(maxCacheElements: 0) { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
+        public static SpeedrunComClient srcClient = new SpeedrunComClient(maxCacheElements: 0)
+            { AccessToken = ConfigurationManager.AppSettings["SRC_APIKey"] };
+
         public static Game srb2Game = srcClient.Games.GetGame(gameId);
         public static Stats s = new Stats(ref srcClient);
 #endif
@@ -51,7 +53,7 @@ namespace RoboBot
 
         private static void Main(string[] args)
         {
-           //replayEvents.StartProcessing();
+            //replayEvents.StartProcessing();
             ///replayEvents.Processed += ReplayProcessed;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
@@ -77,7 +79,6 @@ namespace RoboBot
 
         private static void ReplayProcessed(object sender, ReplayEventArgs args)
         {
-
             switch (args.Status)
             {
                 case ReplayStatus.BadDemo:
@@ -90,38 +91,38 @@ namespace RoboBot
                     SendMessage("i am stupid");
                     return;
             }
+
             MediaPaths outputPaths = new MediaPaths();
-                string imageCode = Path.GetRandomFileName();
-                switch (convertQueue[0].Command.Name)
-                {
-                    case "reptogif":
-                        outputPaths.filePath += "finishedgifs/";
-                        outputPaths.urlPath += $"finishedgifs/{imageCode}.gif";
-                        File.Move(args.OutputPath, $"{outputPaths.filePath}{imageCode}.gif");
-                        break;
-                    case "reptomp4":
-                        outputPaths.filePath += "finishedmp4s/";
-                        outputPaths.urlPath += $"finishedmp4s/{imageCode}.mp4";
-                        File.Move(args.OutputPath, $"/var/www/html/gifs/{imageCode}.gif");
-                        ConvertToMp4($"{outputPaths.filePath}{imageCode}.mp4", imageCode);
-                        File.Delete($"/var/www/html/gifs/{imageCode}.gif");
-                        break;
-                }
+            string imageCode = Path.GetRandomFileName();
+            switch (convertQueue[0].Command.Name)
+            {
+                case "reptogif":
+                    outputPaths.filePath += "finishedgifs/";
+                    outputPaths.urlPath += $"finishedgifs/{imageCode}.gif";
+                    File.Move(args.OutputPath, $"{outputPaths.filePath}{imageCode}.gif");
+                    break;
+                case "reptomp4":
+                    outputPaths.filePath += "finishedmp4s/";
+                    outputPaths.urlPath += $"finishedmp4s/{imageCode}.mp4";
+                    File.Move(args.OutputPath, $"/var/www/html/gifs/{imageCode}.gif");
+                    ConvertToMp4($"{outputPaths.filePath}{imageCode}.mp4", imageCode);
+                    File.Delete($"/var/www/html/gifs/{imageCode}.gif");
+                    break;
+            }
 
-                var finishedmedia = new DiscordMessageBuilder()
-                    .WithContent(outputPaths.urlPath)
-                    .WithReply(convertQueue[0].Message.Id, true)
+            var finishedmedia = new DiscordMessageBuilder()
+                .WithContent(outputPaths.urlPath)
+                .WithReply(convertQueue[0].Message.Id, true)
+                .SendAsync(convertQueue[0].Channel);
+
+            convertQueue.RemoveAt(0);
+            if (convertQueue.Any())
+            {
+                var nextQueue = new DiscordMessageBuilder()
+                    .WithContent("This replay is next.")
+                    .WithReply(convertQueue[0].Message.Id)
                     .SendAsync(convertQueue[0].Channel);
-
-                convertQueue.RemoveAt(0);
-                if (convertQueue.Any())
-                {
-                    var nextQueue = new DiscordMessageBuilder()
-                        .WithContent("This replay is next.")
-                        .WithReply(convertQueue[0].Message.Id)
-                        .SendAsync(convertQueue[0].Channel);
-                }
-            
+            }
         }
 
         private static void SendMessage(string errorMessage)
@@ -130,7 +131,7 @@ namespace RoboBot
                 .WithContent(errorMessage)
                 .WithReply(convertQueue[0].Message.Id)
                 .SendAsync(convertQueue[0].Channel);
-            
+
             convertQueue.RemoveAt(0);
         }
 
@@ -146,12 +147,10 @@ namespace RoboBot
                     .ForcePixelFormat("yuv420p")
                     .ForceFormat("mp4"))
                 .ProcessSynchronously();
-                
         }
-        
+
         private static async Task MainAsync(string[] args)
         {
-
             discord = new DiscordClient(new DiscordConfiguration
             {
                 Token = ConfigurationManager.AppSettings["APIKey"],
@@ -162,7 +161,7 @@ namespace RoboBot
                 PollBehaviour = PollBehaviour.KeepEmojis,
                 Timeout = TimeSpan.FromSeconds(30)
             });
-            
+
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
                 StringPrefixes = new string[] { "!" },
@@ -172,60 +171,93 @@ namespace RoboBot
             {
                 if (e.Interaction.User.Username == Commands.helpUser)
                 {
-                     if (e.Interaction.Data.ComponentType == ComponentType.Select)
+                    switch (e.Interaction.Data.ComponentType)
                     {
-                    string message = "";
-                    foreach (var thing in e.Values)
-                    {
-                        message += thing;
+                        case ComponentType.Select:
+                            string message = "";
+                            foreach (var thing in e.Values)
+                            {
+                                message += thing;
+                            }
+
+                            DiscordEmbedBuilder commandList = new DiscordEmbedBuilder();
+                            switch (message)
+                            {
+                                case "records_label":
+                                    commandList = new DiscordEmbedBuilder
+                                    {
+                                        Title = "Help (!records)",
+                                        Description =
+                                            "The !records command can be used for ILs while !fgrecords is used for Full-game Runs\n\n IL: !records (level) (character) \n FG: !fgrecords (category) (character) (version) \n\n For SRB1 Remake and All Emblems you don't need to put the character.",
+                                        Color = DiscordColor.Gold
+                                    };
+                                    commandList.AddField("IL Example",
+                                        "!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
+                                    commandList.AddField("Full-game Example",
+                                        "!fgrecords any% knuckles 2.1 = Knuckles Any% 2.1");
+                                    commandList.AddField("Full-game Example 2",
+                                        "!fgrecords emblems 2.1 = All Emblems 2.1");
+                                    break;
+
+                                case "replay_label":
+                                    commandList = new DiscordEmbedBuilder
+                                    {
+                                        Title = "Help (!reptomp4)",
+                                        Description =
+                                            "Use !reptomp4 and attach a file to convert your replay to an mp4 file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptomp4 (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted.",
+                                        Color = DiscordColor.Gold
+                                    };
+                                    break;
+                                case "host_label":
+                                    commandList = new DiscordEmbedBuilder
+                                    {
+                                        Title = "Help (!host)",
+                                        Description =
+                                            "Attach a file to your message and send '!host' to upload your replay to roborecords.org. \n\n The bot will give you back a link you can use for verification on SRC ILs.",
+                                        Color = DiscordColor.Gold
+                                    };
+                                    break;
+                            }
+
+
+                            DiscordMessageBuilder ruleMessage =
+                                new DiscordMessageBuilder().AddEmbed(commandList).WithContent("");
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
+                                new DiscordInteractionResponseBuilder(ruleMessage));
+                            break;
+                        
+                        case ComponentType.Button:
+                            string label = "";
+                            label += e.Values;
+                            switch (label)
+                            {
+                                case "Characters":
+                                    string[] addons22Characters = Directory.GetFiles("/root/.srb2/addons/Characters")
+                                        .Select(Path.GetFileName).ToArray();
+                                    Array.Sort(addons22Characters);
+                                    break;
+                                case "Levels":
+                                    
+                                    string[] addons22Levels = Directory.GetFiles("/root/.srb2/addons/Levels")
+                                        .Select(Path.GetFileName).ToArray();
+                                    Array.Sort(addons22Levels);
+                                    break;
+                                case "2.1":
+                                    string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
+                                        .Select(Path.GetFileName).ToArray();
+                                    Array.Sort(addons21);
+                                    break;
+                            }
+                            break;
                     }
-
-                    DiscordEmbedBuilder commandList = new DiscordEmbedBuilder();
-                    switch (message)
-                    {
-                        case "records_label":
-                            commandList = new DiscordEmbedBuilder
-                            {
-                                Title = "Help (!records)",
-                                Description = "The !records command can be used for ILs while !fgrecords is used for Full-game Runs\n\n IL: !records (level) (character) \n FG: !fgrecords (category) (character) (version) \n\n For SRB1 Remake and All Emblems you don't need to put the character.",
-                                Color = DiscordColor.Gold
-                            };
-                            commandList.AddField("IL Example", "!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
-                            commandList.AddField("Full-game Example", "!fgrecords any% knuckles 2.1 = Knuckles Any% 2.1");
-                            commandList.AddField("Full-game Example 2", "!fgrecords emblems 2.1 = All Emblems 2.1");
-                            break;
-
-                        case "replay_label":
-                            commandList = new DiscordEmbedBuilder
-                            {
-                                Title = "Help (!reptomp4)",
-                                Description = "Use !reptomp4 and attach a file to convert your replay to an mp4 file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptomp4 (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted.",
-                                Color = DiscordColor.Gold
-                            };
-                            break;
-                        case "host_label":
-                            commandList = new DiscordEmbedBuilder
-                            {
-                                Title = "Help (!host)",
-                                Description = "Attach a file to your message and send '!host' to upload your replay to roborecords.org. \n\n The bot will give you back a link you can use for verification on SRC ILs.",
-                                Color = DiscordColor.Gold
-                            };
-                            break;
-                    }
-
-                    DiscordMessageBuilder ruleMessage = new DiscordMessageBuilder().AddEmbed(commandList).WithContent("");
-                    await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder(ruleMessage));
-                }
-                     
+                    
                 }
                 else
                 {
                     await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
                 }
-               
-                
             };
-            
+
 
             discord.GuildDownloadCompleted += (sender, eventArgs) =>
             {
@@ -233,17 +265,17 @@ namespace RoboBot
                 {
                     GuildEventLogger.Initialize(ref discord);
                     commands.RegisterCommands<GuildEventLoggerCommands>();
-                    
+
                     Console.WriteLine("Initializing ReactionInteractions...");
                     reactionInteractions = new ReactionInteractions(discord);
                     commands.RegisterCommands<ReactionSetupCommands>();
                     Console.WriteLine("ReactionInteractions Initialized!");
-                    
+
                     leminMentionTimer.Elapsed += LeminMentionTimerOnElapsed;
                 });
             };
 
-        
+
             commands.RegisterCommands<Commands>();
 
             DiscordActivity activity = new DiscordActivity("gfz1 stream", ActivityType.Watching);

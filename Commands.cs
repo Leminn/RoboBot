@@ -43,25 +43,25 @@ namespace RoboBot
         public async Task AddonsInfo(CommandContext ctx)
         {
             
-                    string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
-                        .Select(Path.GetFileName).ToArray();
-                    Array.Sort(addons21);
-                    string[] addons22Characters = Directory.GetFiles("/root/.srb2/addons/Characters")
-                        .Select(Path.GetFileName).ToArray();
-                    Array.Sort(addons22Characters);
-
-                    string[] addons22Levels = Directory.GetFiles("/root/.srb2/addons/Levels")
-                        .Select(Path.GetFileName).ToArray();
-                    Array.Sort(addons22Levels);
 
 
 
-                    var myButton = new DiscordButtonComponent(ButtonStyle.Primary, "my_custom_id", "This is a button!");
+        
+                    BaseDiscordClient client = Program.discord;
+                    helpUser = ctx.User.Username;
+                    DiscordEmoji mapEmoji = DiscordEmoji.FromName(client, ":map:");
+                    DiscordEmoji questionEmoji = DiscordEmoji.FromName(client, ":question:");
+
+                    var builder = new DiscordMessageBuilder()
+                        .WithContent("This message has buttons! Pretty neat innit?")
+                        .AddComponents(new DiscordComponent[]
+                        {
+                            new DiscordButtonComponent(ButtonStyle.Primary, "Characters", "Characters (2.2)", false, new DiscordComponentEmoji(questionEmoji)),
+                            new DiscordButtonComponent(ButtonStyle.Success, "Levels", "Levels (2.2)",false, new DiscordComponentEmoji(mapEmoji)),
+                            new DiscordButtonComponent(ButtonStyle.Secondary, "2.1", "2.1 Addons")
+                        });
             
-            
-            var builder = new DiscordMessageBuilder()
-                .WithContent("This message has buttons! Pretty neat innit?")
-                .AddComponents(myButton);
+                    
             
             // var addonList = new DiscordEmbedBuilder
             // {
