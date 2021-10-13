@@ -261,7 +261,7 @@ namespace RoboBot
 
                             var interactivity = discord.GetInteractivity();
                             var pages = interactivity.GeneratePagesInEmbed(modList);
-                            
+                            await e.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
                             await e.Channel.SendPaginatedMessageAsync(Commands.addonsUser, pages);
                             break;
                     }
