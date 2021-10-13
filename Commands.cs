@@ -43,23 +43,36 @@ namespace RoboBot
         public async Task AddonsInfo(CommandContext ctx)
         {
             
-            
-            string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
-                                .Select(Path.GetFileName).ToArray();
-            Array.Sort(addons21);
-            string[] addons22 = Directory.GetFiles("/root/.srb2/addons")
-                                .Select(Path.GetFileName).ToArray();
-            Array.Sort(addons22);
-            var addonList = new DiscordEmbedBuilder
-            {
-                Title = "Addons for Replay2Gif",
-                Description = "Here are the addons available for use with the converter.",
-                Color = DiscordColor.Gold
-            };
+                    string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
+                        .Select(Path.GetFileName).ToArray();
+                    Array.Sort(addons21);
+                    string[] addons22Characters = Directory.GetFiles("/root/.srb2/addons/Characters")
+                        .Select(Path.GetFileName).ToArray();
+                    Array.Sort(addons22Characters);
 
-            addonList.AddField($"2.2 Addons", MakeModList(addons22));
-            addonList.AddField($"2.1 Addons", MakeModList(addons21));
-            await ctx.RespondAsync(embed: addonList);
+                    string[] addons22Levels = Directory.GetFiles("/root/.srb2/addons/Levels")
+                        .Select(Path.GetFileName).ToArray();
+                    Array.Sort(addons22Levels);
+
+
+
+                    var myButton = new DiscordButtonComponent(ButtonStyle.Primary, "my_custom_id", "This is a button!");
+            
+            
+            var builder = new DiscordMessageBuilder()
+                .WithContent("This message has buttons! Pretty neat innit?")
+                .AddComponents(myButton);
+            
+            // var addonList = new DiscordEmbedBuilder
+            // {
+            //     Title = "Addons for Replay2Gif",
+            //     Description = "Here are the addons available for use with the converter.",
+            //     Color = DiscordColor.Gold
+            // };
+            //
+            // addonList.AddField($"2.2 Addons", MakeModList(addons22Characters));
+            // addonList.AddField($"2.1 Addons", MakeModList(addons21));
+             await ctx.RespondAsync(builder);
         }
 
         private static string MakeModList(string[] mods)
