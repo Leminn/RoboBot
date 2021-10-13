@@ -7,7 +7,6 @@ using SpeedrunComSharp;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,6 +14,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DSharpPlus;
 using DSharpPlus.Interactivity.Extensions;
 using FFMpegCore;
 
@@ -37,65 +37,42 @@ namespace RoboBot
     {
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
-
-
-        [Command("addfile")]
-        public async Task AddFile(CommandContext ctx)
-        {
-            await ctx.TriggerTypingAsync();
-            currentChannel = ctx.Channel;
-
-
-            if (ctx.Message.Attachments.Count != 0)
-            {
-
-                using (WebClient wwwClient = new WebClient())
-                {
-                    wwwClient.DownloadFile(ctx.Message.Attachments.First().Url,
-                        ctx.Message.Attachments.First().FileName);
-                }
-
-                try
-                {
-
-                    FileInfo addon = new FileInfo(ctx.Message.Attachments.First().FileName);
-                    byte[] fileBytes = File.ReadAllBytes(addon.FullName).ToArray();
-                    File.Move(addon.Name, $"/root/.srb2/addons/{addon.Name}");
-
-
-                }
-                catch(Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                    Console.WriteLine(e.StackTrace);
-                    Console.WriteLine(e.Source);
-                    
-                }
-            }
-        }
-
-
+        public static string helpUser = "";
+        
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
             
-            
-            string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
-                                .Select(Path.GetFileName).ToArray();
-            Array.Sort(addons21);
-            string[] addons22 = Directory.GetFiles("/root/.srb2/addons")
-                                .Select(Path.GetFileName).ToArray();
-            Array.Sort(addons22);
-            var addonList = new DiscordEmbedBuilder
-            {
-                Title = "Addons for Replay2Gif",
-                Description = "Here are the addons available for use with the converter.",
-                Color = DiscordColor.Gold
-            };
+                    string[] addons21 = Directory.GetFiles("/root/.srb2/.srb21/addons")
+                        .Select(Path.GetFileName).ToArray();
+                    Array.Sort(addons21);
+                    string[] addons22Characters = Directory.GetFiles("/root/.srb2/addons/Characters")
+                        .Select(Path.GetFileName).ToArray();
+                    Array.Sort(addons22Characters);
 
-            addonList.AddField($"2.2 Addons", MakeModList(addons22));
-            addonList.AddField($"2.1 Addons", MakeModList(addons21));
-            await ctx.RespondAsync(embed: addonList);
+                    string[] addons22Levels = Directory.GetFiles("/root/.srb2/addons/Levels")
+                        .Select(Path.GetFileName).ToArray();
+                    Array.Sort(addons22Levels);
+
+
+
+                    var myButton = new DiscordButtonComponent(ButtonStyle.Primary, "my_custom_id", "This is a button!");
+            
+            
+            var builder = new DiscordMessageBuilder()
+                .WithContent("This message has buttons! Pretty neat innit?")
+                .AddComponents(myButton);
+            
+            // var addonList = new DiscordEmbedBuilder
+            // {
+            //     Title = "Addons for Replay2Gif",
+            //     Description = "Here are the addons available for use with the converter.",
+            //     Color = DiscordColor.Gold
+            // };
+            //
+            // addonList.AddField($"2.2 Addons", MakeModList(addons22Characters));
+            // addonList.AddField($"2.1 Addons", MakeModList(addons21));
+             await ctx.RespondAsync(builder);
         }
 
         private static string MakeModList(string[] mods)
@@ -217,10 +194,10 @@ namespace RoboBot
                     }
                     catch (Exception e)
                     {
-                        await ctx.RespondAsync(e.Message);
-                        await ctx.RespondAsync(e.StackTrace);
-                        await ctx.RespondAsync(e.Source);
-                        await ctx.RespondAsync(e.InnerException.Message);
+                         await ctx.RespondAsync("Error: " + e.Message);
+                        // await ctx.RespondAsync(e.StackTrace);
+                        // await ctx.RespondAsync(e.Source);
+                        // await ctx.RespondAsync(e.InnerException.Message);
                     }
                 }
                 else
@@ -230,52 +207,36 @@ namespace RoboBot
             }
             catch (Exception e)
             {
-                await ctx.RespondAsync(e.Message);
-                await ctx.RespondAsync(e.StackTrace);
-                await ctx.RespondAsync(e.Source);
-                await ctx.RespondAsync(e.InnerException.Message);
+                 await ctx.RespondAsync("Error: " + e.Message);
+                // await ctx.RespondAsync(e.StackTrace);
+                // await ctx.RespondAsync(e.Source);
+                // await ctx.RespondAsync(e.InnerException.Message);
             }
         }
 
-       
 
 
-        [Command("help")]
-        public async Task Help(CommandContext ctx) =>  await HelpSheet(ctx, " ");
 
         [Command("help")]
-        public async Task HelpSheet(CommandContext ctx, string command)
+        public async Task Help(CommandContext ctx)
         {
-            DiscordEmbedBuilder commandList;
-            switch (command)
+            BaseDiscordClient client = Program.discord;
+            helpUser = ctx.User.Username;
+            DiscordEmoji joystickEmoji = DiscordEmoji.FromName(client, ":joystick:");
+            DiscordEmoji filmEmoji = DiscordEmoji.FromName(client, ":film_frames:");
+            DiscordEmoji cloudEmoji = DiscordEmoji.FromName(client, ":cloud:");
+            
+            var options = new List<DiscordSelectComponentOption>()
             {
-                case "records":
-                    commandList = new DiscordEmbedBuilder
-                    {
-                        Title = "Help (!records)",
-                        Description = "The !records command can be used for ILs while !fgrecords is used for Full-game Runs\n\n IL: !records (level) (character) \n FG: !fgrecords (category) (character) (version) \n\n For SRB1 Remake and All Emblems you don't need to put the character.",
-                        Color = DiscordColor.Gold
-                    };
-                    commandList.AddField("IL Example", "!records GFZ1 sonic = Greenflower Zone Act 1 Sonic");
-                    commandList.AddField("Full-game Example", "!fgrecords any% knuckles 2.1 = Knuckles Any% 2.1");
-                    commandList.AddField("Full-game Example 2", "!fgrecords emblems 2.1 = All Emblems 2.1");
-                    await ctx.RespondAsync(embed: commandList);
-                    break;
-
-                case "reptogif":
-                    commandList = new DiscordEmbedBuilder
-                    {
-                        Title = "Help (!reptogif)",
-                        Description = "Use !reptogif and attach a file to convert your replay to a gif file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptogif (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted. \n\n Large replays (60kb+) might not embed properly onto discord but they will still be hosted.",
-                        Color = DiscordColor.Gold
-                    };
-                    await ctx.RespondAsync(embed: commandList);
-                    break;
-
-                default:
-                    await ctx.RespondAsync("Enter either !help records or !help reptogif");
-                    break;
-            }
+                new DiscordSelectComponentOption("!records", "records_label", "Get the top 5 records of any level/category!",emoji: new DiscordComponentEmoji(joystickEmoji)),
+                new DiscordSelectComponentOption("!reptomp4", "replay_label", "Convert your replays into Mp4s!", emoji: new DiscordComponentEmoji(filmEmoji)),
+                new DiscordSelectComponentOption("!host", "host_label", "Easily host your replay files!", emoji: new DiscordComponentEmoji(cloudEmoji))
+            };
+            var dropdown = new DiscordSelectComponent("dropdown", null, options,false,1,1);
+            
+            var builder = new DiscordMessageBuilder().WithContent("What command would you like to learn about?").AddComponents(dropdown);
+            
+            await builder.SendAsync(ctx.Channel); 
         }
 
         [Command("site")]
