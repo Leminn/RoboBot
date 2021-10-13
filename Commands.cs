@@ -159,11 +159,23 @@ namespace RoboBot
                         {
                             for (int i = 0; i < addons.Length; i++)
                             {
-                                if (!File.Exists($"{addonPath}/{addons[i]}"))
+                                if (version == "2.1")
                                 {
-                                    await ctx.RespondAsync("Addon does not exist on the server.");
-                                    File.Delete($"/root/.srb2/replaystogif/{replay.Name}");
-                                    return;
+                                    if (!File.Exists($"{addonPath}/{addons[i]}"))
+                                    {
+                                        await ctx.RespondAsync("Addon does not exist on the server.");
+                                        File.Delete($"/root/.srb2/replaystogif/{replay.Name}");
+                                        return;
+                                    }
+                                }
+                                else
+                                {
+                                    if (!File.Exists($"{addonPath}/Levels/{addons[i]}") && !File.Exists($"{addonPath}/Characters/{addons[i]}"))
+                                    {
+                                        await ctx.RespondAsync("Addon does not exist on the server.");
+                                        File.Delete($"/root/.srb2/replaystogif/{replay.Name}");
+                                        return;
+                                    }
                                 }
                             }
                             confirmationMessage += " with addon(s) " + string.Join(" ", addons);
