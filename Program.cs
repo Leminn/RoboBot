@@ -201,8 +201,8 @@ namespace RoboBot
                         case "replay_label":
                             commandList = new DiscordEmbedBuilder
                             {
-                                Title = "Help (!reptogif)",
-                                Description = "Use !reptogif and attach a file to convert your replay to a gif file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptogif (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted. \n\n Large replays (60kb+) might not embed properly onto discord but they will still be hosted.",
+                                Title = "Help (!reptomp4)",
+                                Description = "Use !reptomp4 and attach a file to convert your replay to an mp4 file. \n\n You can add addons by first looking at the addons available with !addons and then put !reptomp4 (addonname.pk3/wad) \n\n Lastly, you can use !queue to see when your replay will be converted when there are multiple replays being converted.",
                                 Color = DiscordColor.Gold
                             };
                             break;

@@ -37,17 +37,8 @@ namespace RoboBot
     {
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
-
         public static string helpUser = "";
-
-        [Command("drop")]
-        public async Task DropDown(CommandContext ctx)
-        {
-            // new DiscordComponentEmoji(896487017385431091) new DiscordComponentEmoji(896487233262088202)
-            // Create the options for the user to pick
-
-            
-        }
+        
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
@@ -190,10 +181,10 @@ namespace RoboBot
                     }
                     catch (Exception e)
                     {
-                        await ctx.RespondAsync(e.Message);
-                        await ctx.RespondAsync(e.StackTrace);
-                        await ctx.RespondAsync(e.Source);
-                        await ctx.RespondAsync(e.InnerException.Message);
+                         await ctx.RespondAsync("Error: " + e.Message);
+                        // await ctx.RespondAsync(e.StackTrace);
+                        // await ctx.RespondAsync(e.Source);
+                        // await ctx.RespondAsync(e.InnerException.Message);
                     }
                 }
                 else
@@ -203,10 +194,10 @@ namespace RoboBot
             }
             catch (Exception e)
             {
-                await ctx.RespondAsync(e.Message);
-                await ctx.RespondAsync(e.StackTrace);
-                await ctx.RespondAsync(e.Source);
-                await ctx.RespondAsync(e.InnerException.Message);
+                 await ctx.RespondAsync("Error: " + e.Message);
+                // await ctx.RespondAsync(e.StackTrace);
+                // await ctx.RespondAsync(e.Source);
+                // await ctx.RespondAsync(e.InnerException.Message);
             }
         }
 
