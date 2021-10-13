@@ -140,12 +140,12 @@ namespace RoboBot
                     {
                         string addonName = System.Text.Encoding.ASCII.GetString(addonfname);
                         var charMatch = charactersDirectoryFiles.Where(stringToCheck => stringToCheck == addonName);
-                        if (charMatch != null)
+                        if (charMatch.Any())
                         {
                             addons += "Characters/";
                         };
                         var levelMatch = levelsDirectoryFiles.Where(stringToCheck => stringToCheck == addonName);
-                        if (levelMatch != null)
+                        if (levelMatch.Any())
                         {
                             addons += "Levels/";
                         };
