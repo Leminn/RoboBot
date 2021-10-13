@@ -7,6 +7,7 @@ using SpeedrunComSharp;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -37,7 +38,43 @@ namespace RoboBot
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
 
-        
+
+        [Command("addfile")]
+        public async Task AddFile(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+            currentChannel = ctx.Channel;
+
+
+            if (ctx.Message.Attachments.Count != 0)
+            {
+
+                using (WebClient wwwClient = new WebClient())
+                {
+                    wwwClient.DownloadFile(ctx.Message.Attachments.First().Url,
+                        ctx.Message.Attachments.First().FileName);
+                }
+
+                try
+                {
+
+                    FileInfo addon = new FileInfo(ctx.Message.Attachments.First().FileName);
+                    byte[] fileBytes = File.ReadAllBytes(addon.FullName).ToArray();
+                    File.Move(addon.Name, $"/root/.srb2/addons/{addon.Name}");
+
+
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    Console.WriteLine(e.StackTrace);
+                    Console.WriteLine(e.Source);
+                    
+                }
+            }
+        }
+
+
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {

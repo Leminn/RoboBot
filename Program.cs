@@ -49,8 +49,8 @@ namespace RoboBot
 
         private static void Main(string[] args)
         {
-            replayEvents.StartProcessing();
-            replayEvents.Processed += ReplayProcessed;
+           //replayEvents.StartProcessing();
+            ///replayEvents.Processed += ReplayProcessed;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
             MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
         }
@@ -69,9 +69,6 @@ namespace RoboBot
                 case ReplayStatus.UnhandledException:
                     SendMessage("i am stupid");
                     return;
-                case ReplayStatus.Success:
-                    Console.WriteLine("success");
-                    break;
             }
             MediaPaths outputPaths = new MediaPaths();
                 string imageCode = Path.GetRandomFileName();
