@@ -470,6 +470,10 @@ namespace RoboBot
         {
             
             string username = Regex.Replace(ctx.User.Username, @"[^0-9a-zA-Z]+", "");
+            if (String.IsNullOrEmpty(username))
+            {
+                username = ctx.User.Id.ToString();
+            }
             string fileName = ctx.Message.Attachments.First().FileName;
             
             if (!Directory.Exists("/var/www/html/replays/" + username))
