@@ -135,8 +135,8 @@ namespace RoboBot
                         
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
                         byte[] fileBytes = File.ReadAllBytes(replay.FullName).ToArray();
-                        string addonPath = "";
-                        string version = "";
+                        string addonPath;
+                        string version;
                         if (fileBytes[12] == 201) 
                         {
                             addonPath = $"/root/.srb2/.srb21/addons/";
