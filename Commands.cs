@@ -134,6 +134,7 @@ namespace RoboBot
                     {
                         
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
+                        string replayID = Path.GetRandomFileName() + ".lmp";
                         byte[] fileBytes = File.ReadAllBytes(replay.FullName).ToArray();
                         string addonPath;
                         string version;
@@ -152,7 +153,7 @@ namespace RoboBot
                             await ctx.RespondAsync("File not playable on 2.2 or 2.1. Is it a valid replay?");
                             return;
                         }
-                        File.Move(replay.Name,$"/root/.srb2/replaystogif/{replay.Name}");
+                        File.Move(replay.Name,$"/root/.srb2/replaystogif/{replayID}");
                        
                         string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Username}";
                         if (addons != null)
@@ -164,7 +165,7 @@ namespace RoboBot
                                     if (!File.Exists($"{addonPath}/{addons[i]}"))
                                     {
                                         await ctx.RespondAsync("Addon does not exist on the server.");
-                                        File.Delete($"/root/.srb2/replaystogif/{replay.Name}");
+                                        File.Delete($"/root/.srb2/replaystogif/{replayID}");
                                         return;
                                     }
                                 }
@@ -173,7 +174,7 @@ namespace RoboBot
                                     if (!File.Exists($"{addonPath}/Levels/{addons[i]}") && !File.Exists($"{addonPath}/Characters/{addons[i]}"))
                                     {
                                         await ctx.RespondAsync("Addon does not exist on the server.");
-                                        File.Delete($"/root/.srb2/replaystogif/{replay.Name}");
+                                        File.Delete($"/root/.srb2/replaystogif/{replayID}");
                                         return;
                                     }
                                 }
@@ -188,7 +189,7 @@ namespace RoboBot
                             Program.convertQueue.Add(ctx);
                         }
                         
-                        Program.replayEvents.AddToQueue(addonsJobInfo, $"/root/.srb2/replaystogif/{replay.Name}", "/var/www/html/gifs/torename.gif");
+                        Program.replayEvents.AddToQueue(addonsJobInfo, $"/root/.srb2/replaystogif/{replayID}", "/var/www/html/gifs/torename.gif");
                         
                     }
                     catch (Exception e)
