@@ -36,6 +36,8 @@ namespace RoboBot
         public static ReplayWorker replayEvents = new ReplayWorker();
 
         public static ReactionInteractions reactionInteractions;
+        
+        public static JoinRolesInteractions joinRolesInteractions;
 
 #if NO_SRC
         public static SpeedrunComClient srcClient;
@@ -298,6 +300,11 @@ namespace RoboBot
                     reactionInteractions = new ReactionInteractions(discord);
                     commands.RegisterCommands<ReactionSetupCommands>();
                     Console.WriteLine("ReactionInteractions Initialized!");
+                    
+                    Console.WriteLine("Initializing JoinRolesInteractions...");
+                    joinRolesInteractions = new JoinRolesInteractions(discord);
+                    commands.RegisterCommands<JoinRolesSetupCommands>();
+                    Console.WriteLine("JoinRolesInteractions Initialized!");
 
                     leminMentionTimer.Elapsed += LeminMentionTimerOnElapsed;
                 });
