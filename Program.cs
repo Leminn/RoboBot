@@ -163,6 +163,7 @@ namespace RoboBot
         {
             discord = new DiscordClient(new DiscordConfiguration
             {
+                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers,
                 Token = ConfigurationManager.AppSettings["APIKey"],
                 TokenType = TokenType.Bot
             });
