@@ -89,6 +89,9 @@ namespace RoboBot
                 case ReplayStatus.NoMap:
                     SendMessage("No map found. Did you forget to put the addon name?");
                     return;
+                case ReplayStatus.GameError:
+                    SendMessage("The game crashed with the signal: " + args.ErrorMessage);
+                    return;
                 case ReplayStatus.UnhandledException:
                     SendMessage("i am stupid");
                     return;

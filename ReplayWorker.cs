@@ -15,6 +15,7 @@ namespace RoboBot
         Success,
         BadDemo,
         NoMap,
+        GameError,
         UnhandledException
     }
 
@@ -22,11 +23,14 @@ namespace RoboBot
     {
         public ReplayStatus Status { get; }
         public string OutputPath { get; }
+        
+        public string ErrorMessage { get; }
 
-        public ReplayEventArgs(ReplayStatus status, string outputPath)
+        public ReplayEventArgs(ReplayStatus status, string outputPath, string errorMessage)
         {
             Status = status;
             OutputPath = outputPath;
+            ErrorMessage = errorMessage;
         }
     }
 
@@ -160,16 +164,29 @@ namespace RoboBot
                 GameProcess.Start();
 
                 bool nomap = false;
+                string errorMessage = "";
                 do
                 {
                     Thread.Sleep(2000);
-                    if (File.ReadAllText(LogFilePath).Contains("I_Error()"))
+
+                    string logFile = File.ReadAllText(LogFilePath);  
+                    
+                    if (logFile.Contains("I_Error()"))
                     {
                         nomap = true;
                         File.WriteAllText(LogFilePath, "a");
                         try { GameProcess.Kill(true); }
                         catch { }
                     }
+                    
+                    if (logFile.Contains("Process killed by signal: "))
+                    {
+                        errorMessage = logFile.Split("Process killed by signal: ")[1];
+                        File.WriteAllText(LogFilePath, "a");
+                        try { GameProcess.Kill(true); }
+                        catch { }
+                    }
+                    
                 }
                 while (!GameProcess.HasExited);
 
@@ -183,6 +200,9 @@ namespace RoboBot
                 if (!CurrentGifFiles.SequenceEqual(PreviousGifFiles))
                 {
                     string gifPath = gifInfos.Last().FullName;
+                    
+                    if(!string.IsNullOrEmpty(errorMessage))
+                        InvokeEventAndCleanup(ReplayStatus.GameError, replayPath, gifPath, outputPath, errorMessage);
                     
                     InvokeEventAndCleanup(ReplayStatus.Success, replayPath, gifPath, outputPath);
                 }
@@ -219,17 +239,18 @@ namespace RoboBot
             }
         }
 
-        private void InvokeEventAndCleanup(ReplayStatus status, string replayPath = "", string gifPath = "", string outputPath = "")
+        private void InvokeEventAndCleanup(ReplayStatus status, string replayPath = "", string gifPath = "", string outputPath = "", string errorMessage = "")
         {
             if (!String.IsNullOrEmpty(replayPath) && File.Exists(replayPath))
                 File.Delete(replayPath);
             if (!String.IsNullOrEmpty(gifPath) && File.Exists(gifPath))
             {
-                File.Move(gifPath, outputPath, true);
+                if (status != ReplayStatus.GameError)
+                    File.Move(gifPath, outputPath, true);
                 File.Delete(gifPath);
             }
 
-            Processed?.Invoke(this, new ReplayEventArgs(status, outputPath));
+            Processed?.Invoke(this, new ReplayEventArgs(status, outputPath, errorMessage));
         }
     }
 }
