@@ -24,6 +24,10 @@ namespace RoboBot
 {
     internal class Program
     {
+        public const string AddonsRootPath = "/root/.srb2/addons/";
+        public const string AddonsCharactersPath = AddonsRootPath + "Characters";
+        public const string AddonsLevelsPath = AddonsRootPath + "Levels";
+        
         public static string timeFormat = @"ss\.ff";
         public static string timeFormatWithMinutes = @"mm\:ss\.ff";
         public static string timeFormatWithHours = @"hh\:mm\:ss\.ff";
