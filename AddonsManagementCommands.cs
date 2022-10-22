@@ -13,8 +13,8 @@ namespace RoboBot
 {
     public class AddonsCommands
     {
-        private const string Srb2Root = "/root/.srb2/addons/";
-        private const string AddonsRootPath = "/root/.srb2/";
+        private const string Srb2Root = "/root/.srb2/";
+        private const string AddonsRootPath = "/root/.srb2/addons/";
         private const string AddonsCharactersPath = AddonsRootPath + "Characters";
         private const string AddonsLevelsPath = AddonsRootPath + "Levels";
         private const string AddonsLegacyPath = Srb2Root + ".srb21/" + "addons";
