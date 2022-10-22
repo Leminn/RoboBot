@@ -4,17 +4,16 @@ using System;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
 using SpeedrunComSharp;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Diagnostics;
 using System.IO;
 using FFMpegCore;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Timers;
-using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Enums;
 using DSharpPlus.Interactivity.Extensions;
@@ -24,16 +23,13 @@ namespace RoboBot
 {
     internal class Program
     {
-        public const string AddonsRootPath = "/root/.srb2/addons/";
-        public const string AddonsCharactersPath = AddonsRootPath + "Characters";
-        public const string AddonsLevelsPath = AddonsRootPath + "Levels";
-        
         public static string timeFormat = @"ss\.ff";
         public static string timeFormatWithMinutes = @"mm\:ss\.ff";
         public static string timeFormatWithHours = @"hh\:mm\:ss\.ff";
         public static DiscordClient discord;
         public static string gameId = "76ryx418";
         private static CommandsNextExtension commands;
+        private static SlashCommandsExtension slashCommands;
 
         public static List<CommandContext> convertQueue = new List<CommandContext>();
 
@@ -157,16 +153,6 @@ namespace RoboBot
                     .ForceFormat("mp4"))
                 .ProcessSynchronously();
         }
-        private static string MakeModList(List<string> mods)
-        {
-            string modList = "";
-            foreach (var mod in mods)
-            {
-                modList += mod;
-                if (mod != mods.Last()) modList += ", ";
-            }
-            return modList;
-        }
 
         private static async Task MainAsync(string[] args)
         {
@@ -181,6 +167,8 @@ namespace RoboBot
                 PollBehaviour = PollBehaviour.KeepEmojis,
                 Timeout = TimeSpan.FromSeconds(30)
             });
+
+            slashCommands = discord.UseSlashCommands(new SlashCommandsConfiguration());
 
             commands = discord.UseCommandsNext(new CommandsNextConfiguration
             {
@@ -245,47 +233,6 @@ namespace RoboBot
                             await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
                                 new DiscordInteractionResponseBuilder(ruleMessage));
                             break;
-                        
-                        case ComponentType.Button:
-                            string label = e.Id;
-                            List<string> addons = new List<string>();
-                            switch (label)
-                            {
-                                case "Characters":
-                                    addons.AddRange(Directory.GetFiles("/root/.srb2/addons/Characters")
-                                        .Select(Path.GetFileName));
-                                        break;
-                                case "Levels":
-                                    addons.AddRange(Directory.GetFiles("/root/.srb2/addons/Levels")
-                                        .Select(Path.GetFileName));
-                                    break;
-                                case "2.1":
-                                    addons.AddRange(Directory.GetFiles("/root/.srb2/.srb21/addons")
-                                        .Select(Path.GetFileName));
-                                    break;
-                            }
-
-                            if (!addons.Any())
-                            {
-                                await e.Channel.SendMessageAsync("Addons are empty here.");
-                                return;
-                            }
-          
-                            string modList = MakeModList(addons.OrderBy(x => x).ToList());
-                            var interactivity = discord.GetInteractivity();
-                            var pages = interactivity.GeneratePagesInEmbed(modList);
-                            
-                            var addonList = new DiscordEmbedBuilder
-                            {
-                                Title = "Addons for ReplayToMp4 Converter",
-                                Description = "Here are the addons available for use with the converter.",
-                                Color = DiscordColor.Gold
-                            };
-                            addonList.AddField(label + ":",modList);
-                            DiscordInteractionResponseBuilder addonsResponse = new DiscordInteractionResponseBuilder()
-                                .AddEmbed(addonList);
-                            await e.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,addonsResponse);
-                            break;
                     }
                     
                 }
@@ -317,6 +264,8 @@ namespace RoboBot
                 });
             };
 
+            slashCommands.RegisterCommands<AddonsCommands.AddonsManagementCommands>();
+            slashCommands.RegisterCommands<AddonsCommands.AddonsListCommands>();
 
             commands.RegisterCommands<Commands>();
 
