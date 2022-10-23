@@ -177,6 +177,12 @@ namespace RoboBot
             });
             discord.ComponentInteractionCreated += async (s, e) =>
             {
+                if (e.Id == AddonsCommands.AddonSelectorComponentId)
+                {
+                    await AddonsCommands.AddonsManagementCommands.DownloadSelectedAddon(e);
+                    return;
+                }
+                
                 if (e.Interaction.User.Username == Commands.helpUser || e.Interaction.User.Username == Commands.addonsUser.Username)
                 {
                     switch (e.Interaction.Data.ComponentType)

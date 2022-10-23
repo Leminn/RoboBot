@@ -6,13 +6,17 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.SlashCommands.Attributes;
+using HtmlAgilityPack;
 
 namespace RoboBot
 {
     public class AddonsCommands
     {
+        public const string AddonSelectorComponentId = "addonSelect";
+        
         private const string Srb2Root = "/root/.srb2/";
         private const string AddonsRootPath = "/root/.srb2/addons/";
         private const string AddonsCharactersPath = AddonsRootPath + "Characters";
@@ -24,6 +28,22 @@ namespace RoboBot
             Levels,
             Characters,
             Legacy
+        }
+
+        private static Dictionary<ulong, AddonSelectOptionContext> _addonSelectOptionContexts = new();
+
+        private class AddonSelectOptionContext
+        {
+            public IEnumerable<string> Urls { get; }
+            public string SuggestedFileName { get; }
+            public bool IsLevel { get; }
+
+            public AddonSelectOptionContext(IEnumerable<string> urls, string suggestedFileName, bool isLevel)
+            {
+                Urls = urls;
+                SuggestedFileName = suggestedFileName;
+                IsLevel = isLevel;
+            }
         }
         
         private const Permissions AddonsManagementPermissions = Permissions.ModerateMembers;
@@ -50,14 +70,24 @@ namespace RoboBot
                     await AddonDelete(ctx, AddonsLevelsPath, fileName);
                 }
                 
-                [SlashCommand("add", "Add a level addon to the bot")]
-                public async Task AddonsAdd(InteractionContext ctx,
+                [SlashCommand("addmb", "Add a level addon to the bot")]
+                public async Task AddonsAddFromMessageBoard(InteractionContext ctx,
                     [Option("Url", "The addon url coming from the SRB2 Message Board")]
                     string addonUrl,
-                    [Option("File", "The addon file to delete from the bot")]
+                    [Option("File", "The new addon file name (with or without extension)")]
                     string fileName)
                 {
-                    await AddonAdd(ctx, addonUrl, fileName, true);
+                    await AddonAddFromMessageBoard(ctx, addonUrl, fileName, true);
+                }
+                
+                [SlashCommand("adddl", "Add a level addon to the bot")]
+                public async Task AddonsAddFromDirectLink(InteractionContext ctx,
+                    [Option("Url", "The addon url direct download link")]
+                    string addonUrl,
+                    [Option("File", "The new addon file name (with or without extension)")]
+                    string fileName)
+                {
+                    await AddonAddFromDirectLink(ctx, addonUrl, fileName, true);
                 }
             }
 
@@ -73,14 +103,24 @@ namespace RoboBot
                     await AddonDelete(ctx, AddonsCharactersPath, fileName);
                 }
                 
-                [SlashCommand("add", "Add a character addon to the bot")]
-                public async Task AddonsAdd(InteractionContext ctx,
+                [SlashCommand("addmb", "Add a character addon to the bot")]
+                public async Task AddonsAddFromMessageBoard(InteractionContext ctx,
                     [Option("Url", "The addon url coming from the SRB2 Message Board")]
                     string addonUrl,
-                    [Option("File", "The addon file to delete from the bot")]
+                    [Option("File", "The new addon file name (with or without extension)")]
                     string fileName)
                 {
-                    await AddonAdd(ctx, addonUrl, fileName, false);
+                    await AddonAddFromMessageBoard(ctx, addonUrl, fileName, false);
+                }
+                
+                [SlashCommand("adddl", "Add a character addon to the bot")]
+                public async Task AddonsAddFromDirectLink(InteractionContext ctx,
+                    [Option("Url", "The addon url direct download link")]
+                    string addonUrl,
+                    [Option("File", "The new addon file name (with or without extension)")]
+                    string fileName)
+                {
+                    await AddonAddFromDirectLink(ctx, addonUrl, fileName, false);
                 }
             }
 
@@ -98,7 +138,128 @@ namespace RoboBot
                 await ctx.CreateResponseAsync($"Addon file succesfully deleted! (\"{userFileName}\")");
             }
             
-            private static async Task AddonAdd(InteractionContext ctx, string addonUrl, string suggestedFileName, bool isLevel)
+            private static (string fileExtension, string fileNameNoExt) GetFileNameAndFileExtension(string suggestedFileName)
+            {
+                string fileExtension = string.Empty;
+                string fileNameNoExt;
+                
+                int indexOfDot = suggestedFileName.LastIndexOf('.');
+
+                if (indexOfDot != -1 && suggestedFileName.Length - indexOfDot < 5) // Don't accept bogus file extensions
+                {
+                    fileExtension = suggestedFileName.Substring(indexOfDot);
+                    fileNameNoExt = suggestedFileName.Substring(0, indexOfDot);
+                }
+                else
+                    fileNameNoExt = suggestedFileName;
+
+                return (fileExtension, fileNameNoExt);
+            }
+            
+            private static string GetFileExtensionFromResponse(string fileExtension, HttpResponseMessage response)
+            {
+                if (response.Content.Headers.ContentDisposition?.FileName != null)
+                {
+                    string tempMbSuggestedFileName = response.Content.Headers.ContentDisposition.FileName;
+
+                    // Remove the '"' character at the end of the suggested file name
+                    string mbSuggestedFileName = tempMbSuggestedFileName.Remove(tempMbSuggestedFileName.Length - 1);
+
+                    int mbIndexOfDot = mbSuggestedFileName.LastIndexOf('.');
+
+                    if (mbIndexOfDot != -1 && mbSuggestedFileName.Length - mbIndexOfDot < 5) // Don't accept bogus file extensions
+                        fileExtension = mbSuggestedFileName.Substring(mbIndexOfDot);
+                }
+
+                return fileExtension;
+            }
+
+            private static async Task<(string fileNameNoExt, string fileExtension)> DownloadAddon(string fileNameNoExt, string fileExtension, string suggestedFileName, bool isLevel, HttpResponseMessage response)
+            {
+                // Try and get the file extension from the user provided file name
+                (fileExtension, fileNameNoExt) = GetFileNameAndFileExtension(suggestedFileName);
+                    
+                // If the user didn't provide a file extension, let's try and parse it from the response's suggested file name
+                if (fileExtension == string.Empty)
+                    fileExtension = GetFileExtensionFromResponse(fileExtension, response);
+
+                // All else failed, imply a file extension
+                if (fileExtension == string.Empty)
+                    fileExtension = ".pk3";
+
+                string outputDirectory = isLevel ? AddonsLevelsPath : AddonsCharactersPath;
+                    
+                using (Stream networkStream = await response.Content.ReadAsStreamAsync())
+                using (FileStream fileStream = new FileStream(Path.Combine(outputDirectory, $"{fileNameNoExt}{fileExtension}"), FileMode.OpenOrCreate))
+                {
+                    await networkStream.CopyToAsync(fileStream);
+                    fileStream.Flush();
+                }
+
+                return (fileNameNoExt, fileExtension);
+            }
+
+            public static async Task DownloadSelectedAddon(ComponentInteractionCreateEventArgs args)
+            {
+                bool found = _addonSelectOptionContexts.Remove(args.Message.Id, out AddonSelectOptionContext ctx);
+                if (!found)
+                {
+                    await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
+                        new DiscordInteractionResponseBuilder(
+                            new DiscordMessageBuilder().WithContent("Couldn't get the original SlashCommand context, aborting")));
+                    return;
+                }
+
+                int value = default;
+
+                string rawValue = args.Values.FirstOrDefault();
+                if (rawValue == default || !int.TryParse(rawValue, out value))
+                {
+                    await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
+                        new DiscordInteractionResponseBuilder(
+                            new DiscordMessageBuilder().WithContent("Couldn't get the selected value, aborting")));
+                }
+
+                string urlPart = ctx.Urls.ElementAtOrDefault(value);
+
+                if (urlPart == default)
+                {
+                    await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage,
+                        new DiscordInteractionResponseBuilder(
+                            new DiscordMessageBuilder().WithContent("Couldn't get the selected addon url, aborting")));
+                }
+                
+                string downloadUrl = $"https://{MessageBoardHost}{urlPart}";
+                
+                string fileNameNoExt = string.Empty;
+                string fileExtension = string.Empty;
+
+                await args.Interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate,
+                    new DiscordInteractionResponseBuilder(
+                        new DiscordMessageBuilder()
+                        {
+                            Content = "Downloading addon..."
+                        }));
+
+                try
+                {
+                    HttpResponseMessage response = await _httpClient.GetAsync(downloadUrl);
+
+                    (fileNameNoExt, fileExtension) = await DownloadAddon(fileNameNoExt, fileExtension,
+                        ctx.SuggestedFileName, ctx.IsLevel, response);
+                }
+                catch (Exception e)
+                {
+                    await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent(
+                        $"Something went wrong when downloading the addon ({downloadUrl}): {e.Message}"));
+                    return;
+                }
+
+                await args.Interaction.EditOriginalResponseAsync(new DiscordWebhookBuilder().WithContent(
+                        $"Addon download was succesful! File name: \"{fileNameNoExt}{fileExtension}\""));
+            }
+            
+            private static async Task AddonAddFromMessageBoard(InteractionContext ctx, string addonUrl, string suggestedFileName, bool isLevel)
             {
                 if (_httpClient == default)
                     _httpClient = new HttpClient();
@@ -138,49 +299,81 @@ namespace RoboBot
                 {
                     HttpResponseMessage response = await _httpClient.GetAsync(downloadUrl);
 
-                    fileExtension = string.Empty;
-
-                    // Try and get the file extension from the user provided file name
-                    int indexOfDot = suggestedFileName.LastIndexOf('.');
-
-                    if (indexOfDot != -1 && suggestedFileName.Length - indexOfDot < 5) // Don't accept bogus file extensions
+                    if (response.Content.Headers.ContentType?.MediaType != "text/html")
                     {
-                        fileExtension = suggestedFileName.Substring(indexOfDot);
-                        fileNameNoExt = suggestedFileName.Substring(0, indexOfDot);
+                        (fileNameNoExt, fileExtension) = await DownloadAddon(fileNameNoExt, fileExtension, suggestedFileName, isLevel, response);
+                        await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Addon download was succesful! File name: \"{fileNameNoExt}{fileExtension}\""));
+                        return;
                     }
-                    else
-                        fileNameNoExt = suggestedFileName;
                     
-                    // If the user didn't provide a file extension, let's try and parse it from the response's suggested file name
-                    if (fileExtension == string.Empty && response.Content.Headers.ContentDisposition?.FileName != null)
+                    string html = await response.Content.ReadAsStringAsync();
+                    
+                    HtmlDocument document = new HtmlDocument();
+                    document.LoadHtml(html);
+                    
+                    List<string> downloadPaths = document.DocumentNode.DescendantsAndSelf()
+                        .Where(node => node.HasClass("button--icon--download")).Select(x => x.Attributes["href"]
+                        .Value).ToList();
+                    
+                    List<string> addonNames = document.DocumentNode.DescendantsAndSelf()
+                        .Where(node => node.HasClass("contentRow-title")).Select(x => x.InnerText).ToList();
+
+                    if (downloadPaths.Count == 0 || addonNames.Count != downloadPaths.Count)
                     {
-                        string tempMbSuggestedFileName = response.Content.Headers.ContentDisposition.FileName;
-
-                        // Remove the '"' character at the end of the suggested file name
-                        string mbSuggestedFileName = tempMbSuggestedFileName.Remove(tempMbSuggestedFileName.Length - 1);
-                        
-                        int mbIndexOfDot = mbSuggestedFileName.LastIndexOf('.');
-
-                        if (mbIndexOfDot != -1 && mbSuggestedFileName.Length - mbIndexOfDot < 5) // Don't accept bogus file extensions
-                            fileExtension = mbSuggestedFileName.Substring(mbIndexOfDot);
+                        await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent(
+                            "Could not gather the possible file downloads for this addon"));
+                        return;
                     }
 
-                    // All else failed, imply a file extension
-                    if (fileExtension == string.Empty)
-                        fileExtension = ".pk3";
+                    DiscordSelectComponentOption[] options = new DiscordSelectComponentOption[downloadPaths.Count];
 
-                    string outputDirectory = isLevel ? AddonsLevelsPath : AddonsCharactersPath;
+                    for (int i = 0; i < options.Length; i++)
+                        options[i] = new DiscordSelectComponentOption(addonNames[i], i.ToString());
 
-                    using (Stream networkStream = await response.Content.ReadAsStreamAsync())
-                    using (FileStream fileStream = new FileStream(Path.Combine(outputDirectory, $"{fileNameNoExt}{fileExtension}"), FileMode.OpenOrCreate))
-                    {
-                        await networkStream.CopyToAsync(fileStream);
-                        fileStream.Flush();
-                    }
+                    DiscordSelectComponent addonSelection = new DiscordSelectComponent(AddonSelectorComponentId,
+                        "Which addon file should be downloaded?", options);
+
+                    DiscordMessage message = await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddComponents(addonSelection));
+                    _addonSelectOptionContexts.Add(message.Id, new AddonSelectOptionContext(downloadPaths, suggestedFileName, isLevel));
                 }
                 catch (Exception e)
                 {
                     await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Something went wrong when downloading the addon ({downloadUrl}): {e.Message}"));
+                    return;
+                }
+            }
+
+            private static async Task AddonAddFromDirectLink(InteractionContext ctx, string addonUrl, string suggestedFileName, bool isLevel)
+            {
+                if (_httpClient == default)
+                    _httpClient = new HttpClient();
+
+                if (!Uri.TryCreate(addonUrl, UriKind.Absolute, out Uri addonUri))
+                {
+                    await ctx.CreateResponseAsync("Bad addon link, try again");
+                    return;
+                }
+                
+                string fileNameNoExt = string.Empty;
+                string fileExtension = string.Empty;
+
+                await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource,
+                    new DiscordInteractionResponseBuilder(
+                        new DiscordMessageBuilder()
+                        {
+                            Content = "Downloading addon..."
+                        }));
+
+                try
+                {
+                    HttpResponseMessage response = await _httpClient.GetAsync(addonUri);
+
+                    (fileNameNoExt, fileExtension) = await DownloadAddon(fileNameNoExt, fileExtension,
+                        suggestedFileName, isLevel, response);
+                }
+                catch (Exception e)
+                {
+                    await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Something went wrong when downloading the addon ({addonUri}): {e.Message}"));
                     return;
                 }
                 
