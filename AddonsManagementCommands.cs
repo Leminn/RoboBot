@@ -219,6 +219,8 @@ namespace RoboBot
                         addons = Directory.GetFiles(AddonsCharactersPath).Select(Path.GetFileName)
                             .OrderBy(x => x, StringComparer.CurrentCulture);
 
+                    addons = addons.Take(25); // Discord only supports up to 25 AutoComplete results
+
                     if (string.IsNullOrWhiteSpace(partialValue))
                         return addons.Select(x => new DiscordAutoCompleteChoice(x, x));
 
