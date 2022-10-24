@@ -23,7 +23,7 @@ namespace RoboBot
         private const string AddonsLevelsPath = AddonsRootPath + "Levels";
         private const string AddonsLegacyPath = Srb2Root + ".srb21/" + "addons";
 
-        private enum AddonsListChoice
+        public enum AddonType
         {
             Levels,
             Characters,
@@ -36,13 +36,13 @@ namespace RoboBot
         {
             public IEnumerable<string> Urls { get; }
             public string SuggestedFileName { get; }
-            public bool IsLevel { get; }
+            public AddonType AddonType { get; }
 
-            public AddonSelectOptionContext(IEnumerable<string> urls, string suggestedFileName, bool isLevel)
+            public AddonSelectOptionContext(IEnumerable<string> urls, string suggestedFileName, AddonType addonType)
             {
                 Urls = urls;
                 SuggestedFileName = suggestedFileName;
-                IsLevel = isLevel;
+                AddonType = addonType;
             }
         }
         
@@ -58,74 +58,51 @@ namespace RoboBot
         [SlashRequireGuild]
         public class AddonsManagementCommands : ApplicationCommandModule
         {
-            [SlashCommandGroup("Levels", "Manage level addons")]
-            public class LevelsCommands : ApplicationCommandModule
+            [SlashCommand("addmb", "Add an addon to the bot")]
+            public async Task AddonsAddFromMessageBoard(InteractionContext ctx,
+                [Option("Type", "The type of addon to add")]
+                AddonType addonType,
+                [Option("Url", "The addon url coming from the SRB2 Message Board")]
+                string addonUrl,
+                [Option("File", "The new addon file name (with or without extension)")]
+                string fileName)
             {
-                [SlashCommand("del", "Delete a level addon from the bot")]
-                public async Task AddonsDelete(InteractionContext ctx,
-                    [Autocomplete(typeof(ServerLevelAddonsAutocompleteProvider))]
-                    [Option("File", "The addon file to delete from the bot", true)]
-                    string fileName)
-                {
-                    await AddonDelete(ctx, AddonsLevelsPath, fileName);
-                }
+                await AddonAddFromMessageBoard(ctx, addonUrl, fileName, addonType);
+            }
                 
-                [SlashCommand("addmb", "Add a level addon to the bot")]
-                public async Task AddonsAddFromMessageBoard(InteractionContext ctx,
-                    [Option("Url", "The addon url coming from the SRB2 Message Board")]
-                    string addonUrl,
-                    [Option("File", "The new addon file name (with or without extension)")]
-                    string fileName)
-                {
-                    await AddonAddFromMessageBoard(ctx, addonUrl, fileName, true);
-                }
-                
-                [SlashCommand("adddl", "Add a level addon to the bot")]
-                public async Task AddonsAddFromDirectLink(InteractionContext ctx,
-                    [Option("Url", "The addon url direct download link")]
-                    string addonUrl,
-                    [Option("File", "The new addon file name (with or without extension)")]
-                    string fileName)
-                {
-                    await AddonAddFromDirectLink(ctx, addonUrl, fileName, true);
-                }
+            [SlashCommand("adddl", "Add an addon to the bot")]
+            public async Task AddonsAddFromDirectLink(InteractionContext ctx,
+                [Option("Type", "The type of addon to add")]
+                AddonType addonType,
+                [Option("Url", "The addon url direct download link")]
+                string addonUrl,
+                [Option("File", "The new addon file name (with or without extension)")]
+                string fileName)
+            {
+                await AddonAddFromDirectLink(ctx, addonUrl, fileName, addonType);
             }
 
-            [SlashCommandGroup("Characters", "Manage characters addons")]
-            public class CharactersCommands : ApplicationCommandModule
+            [SlashCommand("del", "Delete a addon from the bot")]
+            public async Task AddonsDelete(InteractionContext ctx,
+                [Option("Type", "The type of addon to delete")]
+                AddonType addonType,
+                [Autocomplete(typeof(ServerAddonsAutocompleteProvider))]
+                [Option("File", "The addon file to delete from the bot", true)]
+                string fileName)
             {
-                [SlashCommand("del", "Delete a character addon from the bot")]
-                public async Task AddonsDelete(InteractionContext ctx,
-                    [Autocomplete(typeof(ServerCharactersAddonsAutocompleteProvider))]
-                    [Option("File", "The addon file to delete from the bot", true)]
-                    string fileName)
-                {
-                    await AddonDelete(ctx, AddonsCharactersPath, fileName);
-                }
-                
-                [SlashCommand("addmb", "Add a character addon to the bot")]
-                public async Task AddonsAddFromMessageBoard(InteractionContext ctx,
-                    [Option("Url", "The addon url coming from the SRB2 Message Board")]
-                    string addonUrl,
-                    [Option("File", "The new addon file name (with or without extension)")]
-                    string fileName)
-                {
-                    await AddonAddFromMessageBoard(ctx, addonUrl, fileName, false);
-                }
-                
-                [SlashCommand("adddl", "Add a character addon to the bot")]
-                public async Task AddonsAddFromDirectLink(InteractionContext ctx,
-                    [Option("Url", "The addon url direct download link")]
-                    string addonUrl,
-                    [Option("File", "The new addon file name (with or without extension)")]
-                    string fileName)
-                {
-                    await AddonAddFromDirectLink(ctx, addonUrl, fileName, false);
-                }
+                await AddonDelete(ctx, addonType, fileName);
             }
 
-            private static async Task AddonDelete(InteractionContext ctx, string addonsDir, string userFileName)
+            private static async Task AddonDelete(InteractionContext ctx, AddonType addonType, string userFileName)
             {
+                string addonsDir = addonType switch
+                {
+                    AddonType.Levels => AddonsLevelsPath,
+                    AddonType.Characters => AddonsCharactersPath,
+                    AddonType.Legacy => AddonsLegacyPath,
+                    _ => throw new ArgumentOutOfRangeException(nameof(addonType), addonType, null)
+                };
+
                 string filePath = Path.Combine(addonsDir, userFileName);
 
                 if (!File.Exists(filePath))
@@ -174,7 +151,7 @@ namespace RoboBot
                 return fileExtension;
             }
 
-            private static async Task<(string fileNameNoExt, string fileExtension)> DownloadAddon(string fileNameNoExt, string fileExtension, string suggestedFileName, bool isLevel, HttpResponseMessage response)
+            private static async Task<(string fileNameNoExt, string fileExtension)> DownloadAddon(string fileNameNoExt, string fileExtension, string suggestedFileName, AddonType addonType, HttpResponseMessage response)
             {
                 // Try and get the file extension from the user provided file name
                 (fileExtension, fileNameNoExt) = GetFileNameAndFileExtension(suggestedFileName);
@@ -187,7 +164,13 @@ namespace RoboBot
                 if (fileExtension == string.Empty)
                     fileExtension = ".pk3";
 
-                string outputDirectory = isLevel ? AddonsLevelsPath : AddonsCharactersPath;
+                string outputDirectory = addonType switch
+                {
+                    AddonType.Levels => AddonsLevelsPath,
+                    AddonType.Characters => AddonsCharactersPath,
+                    AddonType.Legacy => AddonsLegacyPath,
+                    _ => throw new ArgumentOutOfRangeException(nameof(addonType), addonType, null)
+                };
                     
                 using (Stream networkStream = await response.Content.ReadAsStreamAsync())
                 using (FileStream fileStream = new FileStream(Path.Combine(outputDirectory, $"{fileNameNoExt}{fileExtension}"), FileMode.OpenOrCreate))
@@ -246,7 +229,7 @@ namespace RoboBot
                     HttpResponseMessage response = await _httpClient.GetAsync(downloadUrl);
 
                     (fileNameNoExt, fileExtension) = await DownloadAddon(fileNameNoExt, fileExtension,
-                        ctx.SuggestedFileName, ctx.IsLevel, response);
+                        ctx.SuggestedFileName, ctx.AddonType, response);
                 }
                 catch (Exception e)
                 {
@@ -259,7 +242,7 @@ namespace RoboBot
                         $"Addon download was succesful! File name: \"{fileNameNoExt}{fileExtension}\""));
             }
             
-            private static async Task AddonAddFromMessageBoard(InteractionContext ctx, string addonUrl, string suggestedFileName, bool isLevel)
+            private static async Task AddonAddFromMessageBoard(InteractionContext ctx, string addonUrl, string suggestedFileName, AddonType addonType)
             {
                 if (_httpClient == default)
                     _httpClient = new HttpClient();
@@ -301,7 +284,7 @@ namespace RoboBot
 
                     if (response.Content.Headers.ContentType?.MediaType != "text/html")
                     {
-                        (fileNameNoExt, fileExtension) = await DownloadAddon(fileNameNoExt, fileExtension, suggestedFileName, isLevel, response);
+                        (fileNameNoExt, fileExtension) = await DownloadAddon(fileNameNoExt, fileExtension, suggestedFileName, addonType, response);
                         await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Addon download was succesful! File name: \"{fileNameNoExt}{fileExtension}\""));
                         return;
                     }
@@ -334,7 +317,7 @@ namespace RoboBot
                         "Which addon file should be downloaded?", options);
 
                     DiscordMessage message = await ctx.EditResponseAsync(new DiscordWebhookBuilder().AddComponents(addonSelection));
-                    _addonSelectOptionContexts.Add(message.Id, new AddonSelectOptionContext(downloadPaths, suggestedFileName, isLevel));
+                    _addonSelectOptionContexts.Add(message.Id, new AddonSelectOptionContext(downloadPaths, suggestedFileName, addonType));
                 }
                 catch (Exception e)
                 {
@@ -343,7 +326,7 @@ namespace RoboBot
                 }
             }
 
-            private static async Task AddonAddFromDirectLink(InteractionContext ctx, string addonUrl, string suggestedFileName, bool isLevel)
+            private static async Task AddonAddFromDirectLink(InteractionContext ctx, string addonUrl, string suggestedFileName, AddonType addonType)
             {
                 if (_httpClient == default)
                     _httpClient = new HttpClient();
@@ -369,7 +352,7 @@ namespace RoboBot
                     HttpResponseMessage response = await _httpClient.GetAsync(addonUri);
 
                     (fileNameNoExt, fileExtension) = await DownloadAddon(fileNameNoExt, fileExtension,
-                        suggestedFileName, isLevel, response);
+                        suggestedFileName, addonType, response);
                 }
                 catch (Exception e)
                 {
@@ -380,37 +363,27 @@ namespace RoboBot
                 await ctx.EditResponseAsync(new DiscordWebhookBuilder().WithContent($"Addon download was succesful! File name: \"{fileNameNoExt}{fileExtension}\""));
             }
 
-            private class ServerLevelAddonsAutocompleteProvider : IAutocompleteProvider
+            private class ServerAddonsAutocompleteProvider : IAutocompleteProvider
             {
                 public async Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
                 {
-                    return await ServerAddonsAutocompleteProviderHelper.Provider(ctx, true);
-                }
-            }
-        
-            private class ServerCharactersAddonsAutocompleteProvider : IAutocompleteProvider
-            {
-                public async Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx)
-                {
-                    return await ServerAddonsAutocompleteProviderHelper.Provider(ctx, false);
-                }
-            }
+                    DiscordInteractionDataOption addonTypeOption = ctx.Options.FirstOrDefault(x => x.Name == "type");
 
-            private class ServerAddonsAutocompleteProviderHelper
-            {
-                public static async Task<IEnumerable<DiscordAutoCompleteChoice>> Provider(AutocompleteContext ctx, bool isLevel)
-                {
-                    if (ctx.OptionValue is not string partialValue)
+                    if (addonTypeOption is not { Value: string }
+                        || !Enum.TryParse((string)addonTypeOption.Value, out AddonType addonType)
+                        || ctx.OptionValue is not string partialValue)
                         return new List<DiscordAutoCompleteChoice>();
 
-                    IEnumerable<string> addons;
-
-                    if (isLevel)
-                        addons = Directory.GetFiles(AddonsLevelsPath).Select(Path.GetFileName)
-                            .OrderBy(x => x, StringComparer.CurrentCulture);
-                    else
-                        addons = Directory.GetFiles(AddonsCharactersPath).Select(Path.GetFileName)
-                            .OrderBy(x => x, StringComparer.CurrentCulture);
+                    IEnumerable<string> addons = addonType switch
+                    {
+                        AddonType.Levels => Directory.GetFiles(AddonsLevelsPath).Select(Path.GetFileName)
+                            .OrderBy(x => x, StringComparer.CurrentCulture),
+                        AddonType.Characters => Directory.GetFiles(AddonsCharactersPath).Select(Path.GetFileName)
+                            .OrderBy(x => x, StringComparer.CurrentCulture),
+                        AddonType.Legacy => Directory.GetFiles(AddonsLegacyPath).Select(Path.GetFileName)
+                            .OrderBy(x => x, StringComparer.CurrentCulture),
+                        _ => throw new ArgumentOutOfRangeException(nameof(addonType), addonType, null)
+                    };
 
                     addons = addons.Take(25); // Discord only supports up to 25 AutoComplete results
 
@@ -423,29 +396,18 @@ namespace RoboBot
             }
         }
 
-        [SlashCommandGroup("AddonsList", "List addons used for reptogif / reptomp4")]
         [SlashRequireGuild]
         public class AddonsListCommands : ApplicationCommandModule
         {
-            [SlashCommand("Levels", "List level addons to use with reptogif / reptomp4")]
-            public async Task LevelsList(InteractionContext ctx)
+            [SlashCommand("AddonsList", "List addons to use with reptogif / reptomp4")]
+            public async Task AddonsList(InteractionContext ctx,
+                [Option("Type", "Which type of addon to list")]
+                AddonType addonType)
             {
-                await AddonList(ctx, AddonsListChoice.Levels);
+                await AddonList(ctx, addonType);
             }
 
-            [SlashCommand("Characters", "List characters addons to use with reptogif / reptomp4")]
-            public async Task CharactersList(InteractionContext ctx)
-            {
-                await AddonList(ctx, AddonsListChoice.Characters);
-            }
-            
-            [SlashCommand("legacy", "List 2.1 addons to use with reptogif / reptomp4")]
-            public async Task LegacyList(InteractionContext ctx)
-            {
-                await AddonList(ctx, AddonsListChoice.Legacy);
-            }
-
-            private static async Task AddonList(InteractionContext ctx, AddonsListChoice choice)
+            private static async Task AddonList(InteractionContext ctx, AddonType choice)
             {
                 string MakeModList(List<string> mods)
                 {
@@ -458,22 +420,16 @@ namespace RoboBot
                     return modList;
                 }
                 
-                List<string> addons = new List<string>();
-                switch (choice)
+                List<string> addons = choice switch
                 {
-                    case AddonsListChoice.Characters:
-                        addons.AddRange(Directory.GetFiles(AddonsCharactersPath)
-                            .Select(Path.GetFileName));
-                            break;
-                    case AddonsListChoice.Levels:
-                        addons.AddRange(Directory.GetFiles(AddonsLevelsPath)
-                            .Select(Path.GetFileName));
-                        break;
-                    case AddonsListChoice.Legacy:
-                        addons.AddRange(Directory.GetFiles(AddonsLegacyPath)
-                            .Select(Path.GetFileName));
-                        break;
-                }
+                    AddonType.Levels => new List<string>(Directory.GetFiles(AddonsLevelsPath)
+                        .Select(Path.GetFileName)),
+                    AddonType.Characters => new List<string>(Directory.GetFiles(AddonsCharactersPath)
+                        .Select(Path.GetFileName)),
+                    AddonType.Legacy => new List<string>(Directory.GetFiles(AddonsLegacyPath)
+                        .Select(Path.GetFileName)),
+                    _ => throw new ArgumentOutOfRangeException(nameof(choice), choice, null)
+                };
 
                 if (!addons.Any())
                 {
