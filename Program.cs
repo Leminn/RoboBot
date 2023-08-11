@@ -71,6 +71,7 @@ namespace RoboBot
                     {
                         if (channel.Name == "ps3")
                         {
+                            // someday
                             DiscordMember member = guild.GetMemberAsync(111175736701779968).Result;
                             channel.SendMessageAsync($"{member.Mention} 200 emblems run when").Wait();
                         }
@@ -272,8 +273,9 @@ namespace RoboBot
 
             slashCommands.RegisterCommands<AddonsCommands.AddonsManagementCommands>();
             slashCommands.RegisterCommands<AddonsCommands.AddonsListCommands>();
-
             commands.RegisterCommands<Commands>();
+            slashCommands.RegisterCommands<Commands.GetReplaysCommands>();
+
 
             DiscordActivity activity = new DiscordActivity("gfz1 stream", ActivityType.Watching);
 

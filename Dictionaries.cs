@@ -25,39 +25,31 @@ namespace RoboBot_SRB2
     {
         public static Dictionary<string, SRB2Level> levelsID = new Dictionary<string, SRB2Level>()
         {
-            {"GFZ", new SRB2Level("ywejpqld", "Greenflower Zone Act 1", "MAP01")},
             {"GFZ1", new SRB2Level("ywejpqld", "Greenflower Zone Act 1", "MAP01")},
             {"GFZ2", new SRB2Level("69zq08x9", "Greenflower Zone Act 2", "MAP02")},
             {"GFZ3", new SRB2Level("r9gj87j9", "Greenflower Zone Act 3", "MAP03")},
 
-            {"THZ", new SRB2Level("o9xz0x3w", "Techno Hill Zone Act 1", "MAP04")},
             {"THZ1", new SRB2Level("o9xz0x3w", "Techno Hill Zone Act 1", "MAP04")},
             {"THZ2", new SRB2Level("495rnmmd", "Techno Hill Zone Act 2", "MAP05")},
             {"THZ3", new SRB2Level("rdq3qnow", "Techno Hill Zone Act 3", "MAP06")},
 
-            {"DSZ", new SRB2Level("5d7er2qw", "Deep Sea Zone Act 1", "MAP07")},
             {"DSZ1", new SRB2Level("5d7er2qw", "Deep Sea Zone Act 1", "MAP07")},
             {"DSZ2", new SRB2Level("kwj8rv09", "Deep Sea Zone Act 2", "MAP08")},
             {"DSZ3", new SRB2Level("owoex3jd", "Deep Sea Zone Act 3", "MAP09")},
 
-            {"CEZ", new SRB2Level("xd1314z9", "Castle Eggman Zone Act 1", "MAP10")},
             {"CEZ1", new SRB2Level("xd1314z9", "Castle Eggman Zone Act 1", "MAP10")},
             {"CEZ2", new SRB2Level("ewpz58y9", "Castle Eggman Zone Act 2", "MAP11")},
             {"CEZ3", new SRB2Level("y9mrz2zw", "Castle Eggman Zone Act 3", "MAP12")},
 
-            {"ACZ", new SRB2Level("5wknlqvw", "Arid Canyon Zone Act 1", "MAP13")},
             {"ACZ1", new SRB2Level("5wknlqvw", "Arid Canyon Zone Act 1", "MAP13")},
             {"ACZ2", new SRB2Level("5928p479", "Arid Canyon Zone Act 2", "MAP14")},
             {"ACZ3", new SRB2Level("29vlpzqw", "Arid Canyon Zone Act 3", "MAP15")},
 
-            {"RVZ", new SRB2Level("xd4y8kqd", "Red Volcano Zone Act 1", "MAP16")},
             {"RVZ1", new SRB2Level("xd4y8kqd", "Red Volcano Zone Act 1", "MAP16")},
 
-            {"ERZ", new SRB2Level("xd02o4m9", "Egg Rock Zone Act 1", "MAP22")},
             {"ERZ1", new SRB2Level("xd02o4m9", "Egg Rock Zone Act 1", "MAP22")},
             {"ERZ2", new SRB2Level("rw6lympw", "Egg Rock Zone Act 2", "MAP23")},
 
-            {"BCZ", new SRB2Level("z98zl5r9", "Black Core Zone Act 1", "MAP25")},
             {"BCZ1", new SRB2Level("z98zl5r9", "Black Core Zone Act 1", "MAP25")},
             {"BCZ2", new SRB2Level("rdnlgx5w", "Black Core Zone Act 2", "MAP26")},
             {"BCZ3", new SRB2Level("ldy50kpw", "Black Core Zone Act 3", "MAP27")},

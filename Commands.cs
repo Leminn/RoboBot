@@ -18,6 +18,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
+using DSharpPlus.SlashCommands.Attributes;
 using FFMpegCore;
 
 namespace RoboBot
@@ -42,6 +44,116 @@ namespace RoboBot
         public static string helpUser = "";
         public static DiscordMember addonsUser;
         
+        
+        [SlashRequireGuild]
+        public class GetReplaysCommands : ApplicationCommandModule
+        {
+            public enum Characters
+            {
+                Sonic,
+                Tails,
+                Knuckles,
+                Metal,
+                Amy,
+                Fang
+            }
+
+            public enum SkillLevels
+            {
+                Best,
+                Consistent,
+                Random
+            }
+            
+            [SlashCommand("GetReplays", "Get a .zip of all the best runs for a character!")]
+            public async Task GetReplays(InteractionContext ctx,
+                [Option("Character", "Which character to get replays from.")]
+                Characters character,
+                [Option("Skill", "What skill level replays are you looking for?")]
+                SkillLevels skillLevel)
+            {
+                await ctx.CreateResponseAsync(InteractionResponseType.DeferredChannelMessageWithSource);
+
+                await GetReplayZip(ctx, character, skillLevel);
+            }
+
+            public static string FilterCommentForUrl(string comment)
+            {
+                string url = "";
+                int urlIndex = comment.IndexOf("http");
+                if (urlIndex != -1)
+                {
+                    url = comment.Substring(urlIndex);
+                    url = url.Split()[0];
+                }
+                else
+                {
+                    Console.Write("No URL found.");
+                }
+
+                return url;
+
+            }
+            public static async Task GetReplayZip(InteractionContext ctx,  Characters character, SkillLevels skillLevel)
+            {
+                
+                List<string> replaysForDownload = new List<string>();
+                foreach (KeyValuePair<string, SRB2Level> level in SRB2Enums.levelsID)
+                {
+                    try
+                    {
+
+
+
+                        bool gotCat =
+                            SRB2Enums.categoriesID.TryGetValue(character.GetName().ToLower(), out string categoryID);
+                        Leaderboard leaderboard;
+                        leaderboard = Program.srcClient.Leaderboards.GetLeaderboardForLevel(
+                            Program.srb2Game.ID,
+                            level.Value.SrcID,
+                            categoryID,
+                            100);
+                        switch (skillLevel)
+                        {
+                            case SkillLevels.Best:
+                                string bestComment = leaderboard.Records[0].Comment;
+                                replaysForDownload.Add(FilterCommentForUrl(bestComment));
+                                break;
+                        }
+
+  
+                
+                string username = Regex.Replace(ctx.User.Username, @"[^0-9a-zA-Z]+", "");
+
+                if (!Directory.Exists("tempReplays" + username))
+                {
+                    Directory.CreateDirectory("tempReplays" + username);
+                }
+                int i = 0;
+
+                using (WebClient wwwClient = new WebClient())
+                {
+                    foreach (string replayLink in replaysForDownload)
+                    {
+                        Console.WriteLine("download");
+                        string levelName = SRB2Enums.levelsID.ElementAt(i).Value.MapName + ".lmp";
+                        wwwClient.DownloadFile(replayLink, "tempReplays" + username + "/" + levelName);
+                        i++;
+                    }
+                }
+              
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
+
+                }
+                
+
+                await ctx.CreateResponseAsync(replaysForDownload[0] + " | " +  character.GetName() + " | " + skillLevel.GetName());
+            }
+        }
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
