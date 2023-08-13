@@ -63,17 +63,23 @@ namespace RoboBot
                 member.GrantRoleAsync(roleToGrant).Wait();
                 GuildEventLogger.Instance
                     .LogInfo(e.Guild, $"{member.Mention} was granted the role {roleToGrant.Mention} by reacting to [this message]({associatedMessage.Message.JumpLink})").Wait();
-                if (roleToGrant.Id == ExpertPendingRoleID)
+
+                DiscordRole modRole;
+                sender.Guilds[446071031090774042].Roles.TryGetValue(1008209009330896946, out modRole);
+                if (modRole != null)
                 {
-                    GuildEventLogger.Instance
-                        .NotifyModerator(e.Guild,
-                            $"{member.Mention} has requested a Expert Role review. <@&{ModeratorRoleID}>");
-                }
-                else if (roleToGrant.Id == MasterPendingRoleID)
-                {
-                    GuildEventLogger.Instance
-                        .NotifyModerator(e.Guild,
-                            $"{member.Mention} has requested an Master Role review. <@&{ModeratorRoleID}>");
+                    if (roleToGrant.Id == ExpertPendingRoleID)
+                    {
+                        GuildEventLogger.Instance
+                            .NotifyModerator(e.Guild,
+                                $"{member.Mention} has requested a Expert Role review. {modRole.Mention} test");
+                    }
+                    else if (roleToGrant.Id == MasterPendingRoleID)
+                    {
+                        GuildEventLogger.Instance
+                            .NotifyModerator(e.Guild,
+                                $"{member.Mention} has requested an Master Role review. <@&{ModeratorRoleID}>");
+                    }
                 }
             });
         }

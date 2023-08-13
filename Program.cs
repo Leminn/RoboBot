@@ -39,6 +39,7 @@ namespace RoboBot
         
         public static JoinRolesInteractions joinRolesInteractions;
 
+        private ulong guildId;
 #if NO_SRC
         public static SpeedrunComClient srcClient;
         public static Game srb2Game;
