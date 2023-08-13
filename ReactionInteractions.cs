@@ -13,6 +13,9 @@ namespace RoboBot
 {
     public class ReactionInteractions
     {
+        private readonly ulong ExpertPendingRoleID = 1140285898743881728;
+        private readonly ulong MasterPendingRoleID = 1140288682637664276;
+        private readonly ulong ModeratorRoleID = 1008209009330896946;
         private readonly string ReactionMessagesLocalPath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "reaction-messages.json");
 
@@ -60,6 +63,18 @@ namespace RoboBot
                 member.GrantRoleAsync(roleToGrant).Wait();
                 GuildEventLogger.Instance
                     .LogInfo(e.Guild, $"{member.Mention} was granted the role {roleToGrant.Mention} by reacting to [this message]({associatedMessage.Message.JumpLink})").Wait();
+                if (roleToGrant.Id == ExpertPendingRoleID)
+                {
+                    GuildEventLogger.Instance
+                        .NotifyModerator(e.Guild,
+                            $"{member.Mention} has requested a Expert Role review. <@&{ModeratorRoleID}>");
+                }
+                else if (roleToGrant.Id == MasterPendingRoleID)
+                {
+                    GuildEventLogger.Instance
+                        .NotifyModerator(e.Guild,
+                            $"{member.Mention} has requested an Master Role review. <@&{ModeratorRoleID}>");
+                }
             });
         }
         

@@ -62,6 +62,29 @@ namespace RoboBot
             return new GuildLogInfoResult() { IsSet = isSet, LogChannel = channel };
         }
 
+        public async Task NotifyModerator(DiscordGuild guild, string message)
+        {
+            ulong guildId = guild.Id;
+            
+            if (!_logChannels.ContainsKey(guildId))
+                return;
+            try
+            {
+                Task<DiscordMessage> sendTask = _logChannels[guildId].SendMessageAsync(new DiscordEmbedBuilder()
+                    .WithDescription(message)
+                    .WithColor(WarningColor)
+                    
+                );
+
+                await sendTask;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"{nameof(GuildEventLogger)}.{nameof(LogInfo)}: {e.Message}");
+            }
+
+        }
+
         public async Task LogInfo(DiscordGuild guild, string message)
         {
             ulong guildId = guild.Id;
