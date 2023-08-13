@@ -13,9 +13,32 @@ namespace RoboBot
 {
     public class ReactionInteractions
     {
-        private readonly ulong ExpertPendingRoleID = 1140285898743881728;
+        private readonly ulong ExpertPendingRoleID = 1140288610604691536;
         private readonly ulong MasterPendingRoleID = 1140288682637664276;
         private readonly ulong ModeratorRoleID = 1008209009330896946;
+
+        private Dictionary<ulong, string> ExpertRoles = new Dictionary<ulong, string>()
+        {
+            {1140288530325704835,"Super Sonic"},
+            {1140288449228836995, "Propeller Pro"},
+            {1140288118411505775, "Echnidian Elite"},
+            {1139550430259589202, "Wicked Weasel"},
+            {1140288349110796291, "Hyper Hammer"},
+            {1139550319202795610, "Metal Madness"},
+            {1140333393536622633, "Shooting Starlight"}
+        };
+
+        private Dictionary<ulong, string> MasterRoles = new Dictionary<ulong, string>()
+        {
+            { 1140333937323950243, "Hyper Hedgehog" },
+            { 1140333859985162321, "Spinfly Specialist" },
+            { 1140333791651565599, "Gliding Goliath" },
+            { 1140333689805479967, "Popgun Professional" },
+            { 1140333752959127622, "Mallet Maestro" },
+            { 1140333621790642278, "Mechanical Masterpiece" },
+            { 1140334005242302515, "Nightopian Nightmare" }
+        };
+        
         private readonly string ReactionMessagesLocalPath =
             Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "reaction-messages.json");
 
@@ -63,23 +86,27 @@ namespace RoboBot
                 member.GrantRoleAsync(roleToGrant).Wait();
                 GuildEventLogger.Instance
                     .LogInfo(e.Guild, $"{member.Mention} was granted the role {roleToGrant.Mention} by reacting to [this message]({associatedMessage.Message.JumpLink})").Wait();
-
                 DiscordRole modRole;
-                sender.Guilds[446071031090774042].Roles.TryGetValue(1008209009330896946, out modRole);
-                if (modRole != null)
+                var gotRole = sender.Guilds[446071031090774042].Roles.TryGetValue(1008209009330896946 , out modRole);
+                if (gotRole)
                 {
-                    if (roleToGrant.Id == ExpertPendingRoleID)
+                    if (ExpertRoles.TryGetValue(roleToGrant.Id, out string masterRole))
                     {
                         GuildEventLogger.Instance
                             .NotifyModerator(e.Guild,
-                                $"{member.Mention} has requested a Expert Role review. {modRole.Mention} test");
+                                $"{member.Mention} has requested a Expert Role review for {masterRole}.").Wait();
                     }
-                    else if (roleToGrant.Id == MasterPendingRoleID)
+                    else if (MasterRoles.TryGetValue(roleToGrant.Id, out string expertRole))
                     {
                         GuildEventLogger.Instance
                             .NotifyModerator(e.Guild,
-                                $"{member.Mention} has requested an Master Role review. <@&{ModeratorRoleID}>");
+                                $"{member.Mention} has requested an Master Role review for {expertRole}.");
                     }
+                    
+                }
+                else
+                {
+                    Console.WriteLine("No mod role");
                 }
             });
         }

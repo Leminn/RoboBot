@@ -71,11 +71,13 @@ namespace RoboBot
             try
             {
                 IMention modRole = new RoleMention(1008209009330896946);
-                
-                Task<DiscordMessage> sendTask = _logChannels[guildId].SendMessageAsync(new DiscordMessageBuilder()
+                await _logChannels[guildId].SendMessageAsync(new DiscordMessageBuilder()
                     .WithAllowedMention(modRole)
-                    .WithContent(message)
-                );
+                    .WithContent("<@&1008209009330896946>"));
+                Task<DiscordMessage> sendTask = _logChannels[guildId].SendMessageAsync(new DiscordEmbedBuilder()
+                    .WithColor(DiscordColor.Red)
+                    .WithDescription(message))
+                ;
                 
 
                 await sendTask;
