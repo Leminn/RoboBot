@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -28,7 +29,7 @@ namespace RoboBot
 
         public static JobInfo NoAddons = new JobInfo();
 
-        public static JobInfo CreateFromStrings(byte addonsCount, string[] addonsFileNames)
+        public static JobInfo CreateFromStrings(byte addonsCount, List<string> addonsFileNames)
         {
             byte[][] addonsNamesConverted = new byte[addonsCount][];
             for (int i = 0; i < addonsCount; i++)

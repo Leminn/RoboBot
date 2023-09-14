@@ -103,17 +103,27 @@ namespace RoboBot
 
         [Command("reptomp4")]
         public async Task ReplayToMp4NoAddons(CommandContext ctx) => await ReplayConverterWithAddons(ctx, null);
-        
+
         [Command("reptomp4")]
-        public async Task ReplayToMp4WithAddons(CommandContext ctx, params string[] addons) => await ReplayConverterWithAddons(ctx, addons);
-        
+        public async Task ReplayToMp4WithAddons(CommandContext ctx, params string[] addons) => await ReplayConverterWithAddons(ctx, null);
+
         [Command("reptogif")]
         public async Task ReplayConverterWithAddons(CommandContext ctx, params string[] addons)
         {
             try
-            {
+            {                
+                List<string> addonsList;
+
+                if (addons == null)
+                {
+                    addonsList = new List<string>();
+                }
+                else
+                {
+                    addonsList = addons.ToList();
+                }
+
                 await ctx.TriggerTypingAsync();
-                JobInfo addonsJobInfo = addons != null ? JobInfo.CreateFromStrings((byte)addons.Length, addons) : JobInfo.NoAddons;
                 currentChannel = ctx.Channel;
                 
 
@@ -129,9 +139,23 @@ namespace RoboBot
                     {
                         wwwClient.DownloadFile(ctx.Message.Attachments.First().Url, ctx.Message.Attachments.First().FileName);
                     }
-
+                    
                     try
                     {
+                        string fileName = ctx.Message.Attachments.First().FileName;
+                        if (addonsList.Count < 1)
+                        {
+                            AddonLister addonLister = new AddonLister();
+                            addonLister.fileName = fileName;
+                            byte[] file = File.ReadAllBytes(fileName);
+                            string[] addonss = addonLister.GetFilesFromReplay(file);
+                            foreach (var mod in addonss)
+                            {
+                                addonsList.Add(mod);
+                            }
+                        }
+                        
+                        JobInfo addonsJobInfo = addonsList.Any() ? JobInfo.CreateFromStrings((byte)addonsList.Count, addonsList) : JobInfo.NoAddons;
                         
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
                         string replayID = Path.GetRandomFileName() + ".lmp";
@@ -207,7 +231,7 @@ namespace RoboBot
             }
             catch (Exception e)
             {
-                 await ctx.RespondAsync("Error: " + e.Message);
+                 await ctx.RespondAsync("Error: " + e.Message + e.StackTrace);
                 // await ctx.RespondAsync(e.StackTrace);
                 // await ctx.RespondAsync(e.Source);
                 // await ctx.RespondAsync(e.InnerException.Message);
