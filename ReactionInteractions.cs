@@ -100,7 +100,7 @@ namespace RoboBot
                     {
                         GuildEventLogger.Instance
                             .NotifyModerator(e.Guild,
-                                $"{member.Mention} has requested an Master Role review for {expertRole}.");
+                                $"{member.Mention} has requested a Master Role review for {expertRole}.");
                     }
                     
                 }

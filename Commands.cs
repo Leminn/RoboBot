@@ -105,20 +105,16 @@ namespace RoboBot
         public async Task ReplayToMp4NoAddons(CommandContext ctx) => await ReplayConverterWithAddons(ctx, null);
 
         [Command("reptomp4")]
-        public async Task ReplayToMp4WithAddons(CommandContext ctx, params string[] addons) => await ReplayConverterWithAddons(ctx, null);
+        public async Task ReplayToMp4WithAddons(CommandContext ctx, params string[] addons) => await ReplayConverterWithAddons(ctx, addons);
 
         [Command("reptogif")]
         public async Task ReplayConverterWithAddons(CommandContext ctx, params string[] addons)
         {
             try
             {                
-                List<string> addonsList;
+                List<string> addonsList = new List<string>();
 
-                if (addons == null)
-                {
-                    addonsList = new List<string>();
-                }
-                else
+                if (addons != null)
                 {
                     addonsList = addons.ToList();
                 }
@@ -149,13 +145,18 @@ namespace RoboBot
                             addonLister.fileName = fileName;
                             byte[] file = File.ReadAllBytes(fileName);
                             string[] addonss = addonLister.GetFilesFromReplay(file);
-                            foreach (var mod in addonss)
+                            ClientSideAddons clientSideAddons = new ClientSideAddons();
+                            foreach (var modName in addonss)
                             {
-                                addonsList.Add(mod);
+                                bool clientSide = clientSideAddons.addons.Any(s=>modName.Contains(s));
+                                if (!clientSide)
+                                
+                                    Console.WriteLine("Added");
+                                    addonsList.Add(modName);
+                                }
                             }
-                        }
                         
-                        JobInfo addonsJobInfo = addonsList.Any() ? JobInfo.CreateFromStrings((byte)addonsList.Count, addonsList) : JobInfo.NoAddons;
+                        
                         
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
                         string replayID = Path.GetRandomFileName() + ".lmp";
@@ -178,32 +179,32 @@ namespace RoboBot
                             return;
                         }
                         File.Move(replay.Name,$"/root/.srb2/replaystogif/{replayID}");
-                       
+
                         string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Username}";
-                        if (addons != null)
+                        if (addonsList.Any())
                         {
-                            for (int i = 0; i < addons.Length; i++)
+                            foreach (var addonName in addonsList.ToList())
                             {
                                 if (version == "2.1")
                                 {
-                                    if (!File.Exists($"{addonPath}/{addons[i]}"))
+                                    if (!File.Exists($"{addonPath}/{addonName}"))
                                     {
-                                        await ctx.RespondAsync("Addon does not exist on the server.");
+                                        await ctx.RespondAsync( addonName + " does not exist on the server.");
                                         File.Delete($"/root/.srb2/replaystogif/{replayID}");
                                         return;
                                     }
                                 }
                                 else
                                 {
-                                    if (!File.Exists($"{addonPath}/Levels/{addons[i]}") && !File.Exists($"{addonPath}/Characters/{addons[i]}"))
+                                    if (!File.Exists($"{addonPath}/Levels/{addonName}") && !File.Exists($"{addonPath}/Characters/{addonName}"))
                                     {
-                                        await ctx.RespondAsync("Addon does not exist on the server.");
-                                        File.Delete($"/root/.srb2/replaystogif/{replayID}");
-                                        return;
+                                        addonsList.Remove(addonName);
                                     }
                                 }
+
+                          
                             }
-                            confirmationMessage += " with addon(s) " + string.Join(" ", addons);
+                                confirmationMessage += " with addon(s) " + string.Join(" ", addonsList);
                         }
                        
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -212,16 +213,16 @@ namespace RoboBot
                             await ctx.RespondAsync(confirmationMessage);
                             Program.convertQueue.Add(ctx);
                         }
+                        JobInfo addonsJobInfo = addonsList.Any() ? JobInfo.CreateFromStrings((byte)addonsList.Count, addonsList) : JobInfo.NoAddons;
+
                         
                         Program.replayEvents.AddToQueue(addonsJobInfo, $"/root/.srb2/replaystogif/{replayID}", "/var/www/html/gifs/torename.gif");
                         
                     }
                     catch (Exception e)
                     {
-                         await ctx.RespondAsync("Error: " + e.Message);
-                        // await ctx.RespondAsync(e.StackTrace);
-                        // await ctx.RespondAsync(e.Source);
-                        // await ctx.RespondAsync(e.InnerException.Message);
+                         await ctx.RespondAsync("Error: " + e.Message + " | Stack Trace: " + e.StackTrace + " | Source " + e.Source );
+                        await ctx.RespondAsync(e.InnerException.Message);
                     }
                 }
                 else

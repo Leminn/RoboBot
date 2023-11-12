@@ -157,7 +157,7 @@ namespace RoboBot
                     }
                 }
 
-                GameProcess.StartInfo.Arguments = "./reptovid -home /root -playdemo replay/downloaded.lmp  " + addons + "-- :1";
+                GameProcess.StartInfo.Arguments = "./reptovid -home /root -playdemo replay/downloaded.lmp  " + addons + " -force -- :1";
                 GameProcess.StartInfo.FileName = "xinit";
                 GameProcess.StartInfo.WorkingDirectory = ExecutableFolder;
                 
@@ -174,7 +174,7 @@ namespace RoboBot
                     if (logFile.Contains("I_Error()"))
                     {
                         nomap = true;
-                        File.WriteAllText(LogFilePath, "a");
+                        //File.WriteAllText(LogFilePath, "a");
                         try { GameProcess.Kill(true); }
                         catch { }
                     }
@@ -182,7 +182,7 @@ namespace RoboBot
                     if (logFile.Contains("Process killed by signal: "))
                     {
                         errorMessage = logFile.Split("Process killed by signal: ")[1];
-                        File.WriteAllText(LogFilePath, "a");
+                       // File.WriteAllText(LogFilePath, "a");
                         try { GameProcess.Kill(true); }
                         catch { }
                     }
