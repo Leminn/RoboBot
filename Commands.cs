@@ -178,34 +178,39 @@ namespace RoboBot
                         string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Username}";
                         if (addonsList.Any())
                         {
-                            for (var i = 0; i < addonsList.ToList().Count; i++)
+                            for (var i = 0; i < addonsList.Count; i++)
                             {
-                                var addon = addonsList.ToList()[i];
-                                
                                 if (version == "2.1")
                                 {
-                                    if (!File.Exists($"{addonPath}/{addon.fileName}"))
+                                    if (!File.Exists($"{addonPath}/{addonsList[i].fileName}"))
                                     {
-                                        await ctx.RespondAsync(addon.fileName + " does not exist on the server.");
+                                        await ctx.RespondAsync(addonsList[i].fileName + " does not exist on the server.");
                                         File.Delete($"/root/.srb2/replaystogif/{replayID}");
                                         return;
                                     }
                                 }
                                 else
                                 {
-                                    if (!File.Exists($"{addonPath}/Levels/{addon.fileName}") &&
-                                        !File.Exists($"{addonPath}/Characters/{addon.fileName}"))
+                                    if (!File.Exists($"{addonPath}/Levels/{addonsList[i].fileName}") &&
+                                        !File.Exists($"{addonPath}/Characters/{addonsList[i].fileName}"))
                                     {
                                         // Use the MD5 of the addon to try and get the file instead
-                                        if (ServerAddonHashes.Addons.TryGetValue(addon.md5, out FileInfo addonFile))
-                                            addon.fileName = addonFile.Name;
+                                        if (ServerAddonHashes.Addons.TryGetValue(addonsList[i].md5, out FileInfo addonFile))
+                                        {
+                                            // Hackish way to replace the file name of that addon
+                                            string md5 = addonsList[i].md5;
+                                            
+                                            addonsList.RemoveAt(i);
+                                            addonsList.Insert(i, (addonFile.Name, md5));
+                                            
+                                        }
                                         else
-                                            addonsList.Remove(addon);
+                                            addonsList.Remove(addonsList[i]);
                                     }
                                 }
                             }
 
-                            confirmationMessage += " with addon(s) " + string.Join(" ", addonsList);
+                            confirmationMessage += " with addon(s) " + string.Join(" ", addonsList.Select(x => x.fileName));
                         }
                        
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
