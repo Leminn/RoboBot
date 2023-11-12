@@ -145,24 +145,20 @@ namespace RoboBot
                             addonLister.fileName = fileName;
                             byte[] file = File.ReadAllBytes(fileName);
                             string[] addonss = addonLister.GetFilesFromReplay(file);
-                            ClientSideAddons clientSideAddons = new ClientSideAddons();
+                            
                             foreach (var modName in addonss)
                             {
-                                bool clientSide = clientSideAddons.addons.Any(s=>modName.Contains(s));
-                                if (!clientSide)
-                                
-                                    Console.WriteLine("Added");
+                                if (!ClientSideAddons.Addons.Any(s=>modName.ToLower().Contains(s)))
                                     addonsList.Add(modName);
-                                }
                             }
-                        
-                        
+                        }
                         
                         FileInfo replay = new FileInfo(ctx.Message.Attachments.First().FileName);
                         string replayID = Path.GetRandomFileName() + ".lmp";
                         byte[] fileBytes = File.ReadAllBytes(replay.FullName).ToArray();
                         string addonPath;
                         string version;
+                        
                         if (fileBytes[12] == 201) 
                         {
                             addonPath = $"/root/.srb2/.srb21/addons/";
@@ -178,6 +174,7 @@ namespace RoboBot
                             await ctx.RespondAsync("File not playable on 2.2 or 2.1. Is it a valid replay?");
                             return;
                         }
+                        
                         File.Move(replay.Name,$"/root/.srb2/replaystogif/{replayID}");
 
                         string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Username}";
@@ -201,20 +198,17 @@ namespace RoboBot
                                         addonsList.Remove(addonName);
                                     }
                                 }
-
-                          
                             }
-                                confirmationMessage += " with addon(s) " + string.Join(" ", addonsList);
+                            
+                            confirmationMessage += " with addon(s) " + string.Join(" ", addonsList);
                         }
                        
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-
                         {
                             await ctx.RespondAsync(confirmationMessage);
                             Program.convertQueue.Add(ctx);
                         }
                         JobInfo addonsJobInfo = addonsList.Any() ? JobInfo.CreateFromStrings((byte)addonsList.Count, addonsList) : JobInfo.NoAddons;
-
                         
                         Program.replayEvents.AddToQueue(addonsJobInfo, $"/root/.srb2/replaystogif/{replayID}", "/var/www/html/gifs/torename.gif");
                         
@@ -238,9 +232,6 @@ namespace RoboBot
                 // await ctx.RespondAsync(e.InnerException.Message);
             }
         }
-
-
-
 
         [Command("help")]
         public async Task Help(CommandContext ctx)
