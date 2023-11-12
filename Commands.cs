@@ -112,11 +112,11 @@ namespace RoboBot
         {
             try
             {                
-                List<string> addonsList = new List<string>();
+                List<(string fileName, string md5)> addonsList = new();
 
                 if (addons != null)
                 {
-                    addonsList = addons.ToList();
+                    addonsList = addons.Select(x => (x, "")).ToList();
                 }
 
                 await ctx.TriggerTypingAsync();
@@ -141,15 +141,13 @@ namespace RoboBot
                         string fileName = ctx.Message.Attachments.First().FileName;
                         if (addonsList.Count < 1)
                         {
-                            AddonLister addonLister = new AddonLister();
-                            addonLister.fileName = fileName;
                             byte[] file = File.ReadAllBytes(fileName);
-                            string[] addonss = addonLister.GetFilesFromReplay(file);
+                            (string fileName, string md5)[] addonsFiles = AddonLister.GetFilesFromReplay(file);
                             
-                            foreach (var modName in addonss)
+                            foreach (var addon in addonsFiles)
                             {
-                                if (!ClientSideAddons.Addons.Any(s=>modName.ToLower().Contains(s)))
-                                    addonsList.Add(modName);
+                                if (!ClientSideAddons.Addons.Any(s=>addon.fileName.ToLower().Contains(s)))
+                                    addonsList.Add(addon);
                             }
                         }
                         
@@ -180,26 +178,33 @@ namespace RoboBot
                         string confirmationMessage = $"Processing {version} replay sent by {ctx.Member.Username}";
                         if (addonsList.Any())
                         {
-                            foreach (var addonName in addonsList.ToList())
+                            for (var i = 0; i < addonsList.ToList().Count; i++)
                             {
+                                var addon = addonsList.ToList()[i];
+                                
                                 if (version == "2.1")
                                 {
-                                    if (!File.Exists($"{addonPath}/{addonName}"))
+                                    if (!File.Exists($"{addonPath}/{addon.fileName}"))
                                     {
-                                        await ctx.RespondAsync( addonName + " does not exist on the server.");
+                                        await ctx.RespondAsync(addon.fileName + " does not exist on the server.");
                                         File.Delete($"/root/.srb2/replaystogif/{replayID}");
                                         return;
                                     }
                                 }
                                 else
                                 {
-                                    if (!File.Exists($"{addonPath}/Levels/{addonName}") && !File.Exists($"{addonPath}/Characters/{addonName}"))
+                                    if (!File.Exists($"{addonPath}/Levels/{addon.fileName}") &&
+                                        !File.Exists($"{addonPath}/Characters/{addon.fileName}"))
                                     {
-                                        addonsList.Remove(addonName);
+                                        // Use the MD5 of the addon to try and get the file instead
+                                        if (ServerAddonHashes.Addons.TryGetValue(addon.md5, out FileInfo addonFile))
+                                            addon.fileName = addonFile.Name;
+                                        else
+                                            addonsList.Remove(addon);
                                     }
                                 }
                             }
-                            
+
                             confirmationMessage += " with addon(s) " + string.Join(" ", addonsList);
                         }
                        
@@ -208,7 +213,7 @@ namespace RoboBot
                             await ctx.RespondAsync(confirmationMessage);
                             Program.convertQueue.Add(ctx);
                         }
-                        JobInfo addonsJobInfo = addonsList.Any() ? JobInfo.CreateFromStrings((byte)addonsList.Count, addonsList) : JobInfo.NoAddons;
+                        JobInfo addonsJobInfo = addonsList.Any() ? JobInfo.CreateFromStrings((byte)addonsList.Count, addonsList.Select(x => x.fileName).ToList()) : JobInfo.NoAddons;
                         
                         Program.replayEvents.AddToQueue(addonsJobInfo, $"/root/.srb2/replaystogif/{replayID}", "/var/www/html/gifs/torename.gif");
                         

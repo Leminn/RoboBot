@@ -279,6 +279,9 @@ namespace RoboBot
             DiscordActivity activity = new DiscordActivity("gfz1 stream", ActivityType.Watching);
 
             await discord.ConnectAsync(activity);
+            
+            ServerAddonHashes.StartWatchingAddonChanges();
+            
             await Task.Delay(-1);
         }
     }
