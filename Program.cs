@@ -85,7 +85,7 @@ namespace RoboBot
             switch (args.Status)
             {
                 case ReplayStatus.BadDemo:
-                    SendMessage("Bad Demo. Is your file a valid replay?");
+                    SendMessage("Bad Demo. File might not be a valid replay or you have loaded a replay with addons not installed on the bot.");
                     return;
                 case ReplayStatus.NoMap:
                     SendMessage("No map found. Did you forget to put the addon name?");
