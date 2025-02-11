@@ -40,36 +40,17 @@ namespace RoboBot
         public static DiscordChannel currentChannel;
         public static string finalVersion = "";
         public static string helpUser = "";
-        public static DiscordMember addonsUser;
         
         [Command("addons")]
         public async Task AddonsInfo(CommandContext ctx)
         {
                     BaseDiscordClient client = Program.discord;
                     helpUser = ctx.User.Username;
-                    DiscordEmoji mapEmoji = DiscordEmoji.FromName(client, ":map:");
-                    DiscordEmoji questionEmoji = DiscordEmoji.FromName(client, ":question:");
 
                     var builder = new DiscordMessageBuilder()
-                        .WithContent("Which addons would you like to see?")
-                        .AddComponents(new DiscordComponent[]
-                        {
-                            new DiscordButtonComponent(ButtonStyle.Primary, "Characters", "Characters (2.2)", false, new DiscordComponentEmoji(questionEmoji)),
-                            new DiscordButtonComponent(ButtonStyle.Success, "Levels", "Levels (2.2)",false, new DiscordComponentEmoji(mapEmoji)),
-                            new DiscordButtonComponent(ButtonStyle.Secondary, "2.1", "2.1 Addons")
-                        });
-                    addonsUser = ctx.Member;
-                    
-            
-            // var addonList = new DiscordEmbedBuilder
-            // {
-            //     Title = "Addons for Replay2Gif",
-            //     Description = "Here are the addons available for use with the converter.",
-            //     Color = DiscordColor.Gold
-            // };
-            //
-            // addonList.AddField($"2.2 Addons", MakeModList(addons22Characters));
-            // addonList.AddField($"2.1 Addons", MakeModList(addons21));
+                        .WithContent("List of all addons currently available on the bot: https://roborecords.org/srb2addons/");
+                      
+
              await ctx.RespondAsync(builder);
         }
 
