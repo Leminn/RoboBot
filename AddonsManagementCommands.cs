@@ -396,60 +396,61 @@ namespace RoboBot
             }
         }
 
-        [SlashRequireGuild]
-        public class AddonsListCommands : ApplicationCommandModule
-        {
-            [SlashCommand("AddonsList", "List addons to use with reptogif / reptomp4")]
-            public async Task AddonsList(InteractionContext ctx,
-                [Option("Type", "Which type of addon to list")]
-                AddonType addonType)
-            {
-                await AddonList(ctx, addonType);
-            }
-
-            private static async Task AddonList(InteractionContext ctx, AddonType choice)
-            {
-                string MakeModList(List<string> mods)
-                {
-                    string modList = "";
-                    foreach (var mod in mods)
+                    [SlashRequireGuild]
+                    public class AddonsListCommands : ApplicationCommandModule
                     {
-                        modList += mod;
-                        if (mod != mods.Last()) modList += ", ";
-                    }
-                    return modList;
-                }
-                
-                List<string> addons = choice switch
-                {
-                    AddonType.Levels => new List<string>(Directory.GetFiles(AddonsLevelsPath)
-                        .Select(Path.GetFileName)),
-                    AddonType.Characters => new List<string>(Directory.GetFiles(AddonsCharactersPath)
-                        .Select(Path.GetFileName)),
-                    AddonType.Legacy => new List<string>(Directory.GetFiles(AddonsLegacyPath)
-                        .Select(Path.GetFileName)),
-                    _ => throw new ArgumentOutOfRangeException(nameof(choice), choice, null)
-                };
+                        [SlashCommand("AddonsList", "List addons to use with reptogif / reptomp4")]
+                        public async Task AddonsList(InteractionContext ctx)
+                        {
+                            await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource, 
+        new DiscordInteractionResponseBuilder()
+            .WithContent("You can check the addons downloaded onto the bot over at https://roborecords.org/srb2addons/"));
+                        }
 
-                if (!addons.Any())
-                {
-                    await ctx.CreateResponseAsync("Addons are empty here.");
-                    return;
-                }
-
-                string modList = MakeModList(addons.OrderBy(x => x).ToList());
+            // Disabled as this does not work with large addon lists due to discord embed size limitations.
+            // private static async Task AddonList(InteractionContext ctx, AddonType choice)
+            // {
+            //     string MakeModList(List<string> mods)
+            //     {
+            //         string modList = "";
+            //         foreach (var mod in mods)
+            //         {
+            //             modList += mod;
+            //             if (mod != mods.Last()) modList += ", ";
+            //         }
+            //         return modList;
+            //     }
                 
-                var addonList = new DiscordEmbedBuilder
-                {
-                    Title = "Addons for ReplayToMp4 Converter",
-                    Description = "Here are the addons available for use with the converter.",
-                    Color = DiscordColor.Gold
-                };
-                addonList.AddField(choice + ":",modList);
-                DiscordInteractionResponseBuilder addonsResponse = new DiscordInteractionResponseBuilder()
-                    .AddEmbed(addonList);
-                await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource ,addonsResponse);
-            }
+            //     List<string> addons = choice switch
+            //     {
+            //         AddonType.Levels => new List<string>(Directory.GetFiles(AddonsLevelsPath)
+            //             .Select(Path.GetFileName)),
+            //         AddonType.Characters => new List<string>(Directory.GetFiles(AddonsCharactersPath)
+            //             .Select(Path.GetFileName)),
+            //         AddonType.Legacy => new List<string>(Directory.GetFiles(AddonsLegacyPath)
+            //             .Select(Path.GetFileName)),
+            //         _ => throw new ArgumentOutOfRangeException(nameof(choice), choice, null)
+            //     };
+
+            //     if (!addons.Any())
+            //     {
+            //         await ctx.CreateResponseAsync("Addons are empty here.");
+            //         return;
+            //     }
+
+            //     string modList = MakeModList(addons.OrderBy(x => x).ToList());
+                
+            //     var addonList = new DiscordEmbedBuilder
+            //     {
+            //         Title = "Addons for ReplayToMp4 Converter",
+            //         Description = "Here are the addons available for use with the converter.",
+            //         Color = DiscordColor.Gold
+            //     };
+            //     addonList.AddField(choice + ":",modList);
+            //     DiscordInteractionResponseBuilder addonsResponse = new DiscordInteractionResponseBuilder()
+            //         .AddEmbed(addonList);
+            //     await ctx.CreateResponseAsync(InteractionResponseType.ChannelMessageWithSource ,addonsResponse);
+            // }
         }
     }
 }
